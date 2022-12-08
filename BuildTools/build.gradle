@@ -1,0 +1,22 @@
+plugins {
+	id 'java'
+	id 'distribution'
+}
+
+group = 'nl.rrd'
+version = '1.0.0'
+sourceCompatibility = 11
+targetCompatibility = 11
+archivesBaseName = 'buildtools'
+
+distributions {
+	main {
+		distributionBaseName = archivesBaseName
+		contents {
+			from configurations.compileClasspath
+			from jar
+		}
+	}
+}
+
+[distZip, distTar, installDist]*.dependsOn jar
