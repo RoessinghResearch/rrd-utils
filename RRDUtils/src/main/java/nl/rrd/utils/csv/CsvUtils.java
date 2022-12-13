@@ -22,6 +22,8 @@
 
 package nl.rrd.utils.csv;
 
+import nl.rrd.utils.datetime.DateTimeUtils;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormatSymbols;
@@ -70,18 +72,16 @@ public class CsvUtils {
 			return value.toString();
 		} else if (value instanceof LocalDate) {
 			LocalDate date = (LocalDate)value;
-			return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+			return date.format(DateTimeUtils.DATE_FORMAT);
 		} else if (value instanceof LocalTime) {
 			LocalTime time = (LocalTime)value;
-			return time.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+			return time.format(DateTimeUtils.SQL_TIME_FORMAT);
 		} else if (value instanceof LocalDateTime) {
 			LocalDateTime time = (LocalDateTime)value;
-			return time.format(DateTimeFormatter.ofPattern(
-					"yyyy-MM-dd HH:mm:ss"));
+			return time.format(DateTimeUtils.SQL_DATE_TIME_FORMAT);
 		} else if (value instanceof ZonedDateTime) {
 			ZonedDateTime time = (ZonedDateTime)value;
-			return time.format(DateTimeFormatter.ofPattern(
-					"yyyy-MM-dd HH:mm:ss"));
+			return time.format(DateTimeUtils.SQL_DATE_TIME_FORMAT);
 		} else {
 			return '"' + value.toString().replaceAll("\"", "\"\"") + '"';
 		}
