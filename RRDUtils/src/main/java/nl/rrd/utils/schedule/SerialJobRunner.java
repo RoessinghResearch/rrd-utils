@@ -105,12 +105,7 @@ public class SerialJobRunner {
 				index = 0;
 			pendingJobs.add(index, new JobDetails(job, priority, listener));
 			if (thread == null) {
-				thread = new Thread() {
-					@Override
-					public void run() {
-						runThread();
-					}
-				};
+				thread = new Thread(this::runThread);
 				thread.start();
 			}
 		}
@@ -133,12 +128,7 @@ public class SerialJobRunner {
 				cancelledJobs.add(details);
 			}
 			pendingJobs.clear();
-			new Thread() {
-				@Override
-				public void run() {
-					notifyJobsCancelled(cancelledJobs);
-				}
-			}.start();
+			new Thread(() -> notifyJobsCancelled(cancelledJobs)).start();
 		}
 	}
 
@@ -173,12 +163,7 @@ public class SerialJobRunner {
 					cancelledJobs.add(details);
 				}
 			}
-			new Thread() {
-				@Override
-				public void run() {
-					notifyJobsCancelled(cancelledJobs);
-				}
-			}.start();
+			new Thread(() -> notifyJobsCancelled(cancelledJobs)).start();
 		}
 	}
 
@@ -220,13 +205,10 @@ public class SerialJobRunner {
 	}
 
 	private void notifyJobsCancelled(final List<JobDetails> jobs) {
-		postOnNotifyThread(new Runnable() {
-			@Override
-			public void run() {
-				for (JobDetails job : jobs) {
-					if (job.listener != null)
-						job.listener.jobCancelled(job.job);
-				}
+		postOnNotifyThread(() -> {
+			for (JobDetails job : jobs) {
+				if (job.listener != null)
+					job.listener.jobCancelled(job.job);
 			}
 		});
 	}
@@ -253,12 +235,7 @@ public class SerialJobRunner {
 				}
 				throw ex;
 			} finally {
-				runOnNotifyThread(new Runnable() {
-					@Override
-					public void run() {
-						finishCompletedJob(job);
-					}
-				});
+				runOnNotifyThread(() -> finishCompletedJob(job));
 			}
 		}
 	}
@@ -275,7 +252,7 @@ public class SerialJobRunner {
 			notifyJobCompleted(job);
 	}
 
-	private class JobDetails {
+	private static class JobDetails {
 		public Job job;
 		public int priority;
 		public JobListener listener;
