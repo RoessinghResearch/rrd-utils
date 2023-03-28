@@ -25,6 +25,8 @@ package nl.rrd.utils.log;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import nl.rrd.utils.datetime.DateTimeUtils;
+
 /**
  * This class can tag lines in a log message before the message is written. The
  * tags include the log level, the message tag (identification of the source)
@@ -48,7 +50,7 @@ public class LogLineTagger {
 	public static String tagLines(int level, String tag, ZonedDateTime time,
 			String msg) {
 		String newline = System.getProperty("line.separator");
-		DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+		DateTimeFormatter formatter = DateTimeUtils.ZONED_FORMAT;
 		String timeStr = formatter.format(time);
 		String[] lines = msg.split("\r\n|\r|\n", -1);
 		StringBuilder buf = new StringBuilder();
