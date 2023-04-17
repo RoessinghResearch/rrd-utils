@@ -35,6 +35,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 /**
@@ -180,30 +181,18 @@ public class FileUtils {
 	 */
 	public static void copyFile(File source, File dest, long start, long len)
 	throws IOException {
-		FileInputStream in = new FileInputStream(source);
-		try {
-			FileOutputStream out = new FileOutputStream(dest);
-			try {
+		try (FileInputStream in = new FileInputStream(source)) {
+			try (FileOutputStream out = new FileOutputStream(dest)) {
 				copyStream(in, out, start, len);
-			} finally {
-				out.close();
 			}
-		} finally {
-			in.close();
 		}
 	}
 
 	public static void downloadFile(URL source, File dest) throws IOException {
-		InputStream in = source.openStream();
-		try {
-			FileOutputStream out = new FileOutputStream(dest);
-			try {
+		try (InputStream in = source.openStream()) {
+			try (FileOutputStream out = new FileOutputStream(dest)) {
 				copyStream(in, out, 0, null);
-			} finally {
-				out.close();
 			}
-		} finally {
-			in.close();
 		}
 	}
 
@@ -306,11 +295,8 @@ public class FileUtils {
 	 * @throws IOException if a reading error occurs
 	 */
 	public static byte[] readFileBytes(File file) throws IOException {
-		InputStream input = new FileInputStream(file);
-		try {
+		try (InputStream input = new FileInputStream(file)) {
 			return readFileBytes(input);
-		} finally {
-			input.close();
 		}
 	}
 	
@@ -322,11 +308,8 @@ public class FileUtils {
 	 * @throws IOException if a reading error occurs
 	 */
 	public static byte[] readFileBytes(URL url) throws IOException {
-		InputStream input = url.openStream();
-		try {
+		try (InputStream input = url.openStream()) {
 			return readFileBytes(input);
-		} finally {
-			input.close();
 		}
 	}
 	
@@ -338,16 +321,13 @@ public class FileUtils {
 	 * @throws IOException if a reading error occurs
 	 */
 	public static byte[] readFileBytes(InputStream input) throws IOException {
-		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-		try {
+		try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream()) {
 			byte[] bs = new byte[2048];
 			int len;
 			while ((len = input.read(bs)) > 0) {
 				byteOut.write(bs, 0, len);
 			}
 			return byteOut.toByteArray();
-		} finally {
-			byteOut.close();
 		}
 	}
 	
@@ -360,11 +340,8 @@ public class FileUtils {
 	 * @throws IOException if a reading error occurs
 	 */
 	public static String readFileString(File file) throws IOException {
-		InputStream input = new FileInputStream(file);
-		try {
+		try (InputStream input = new FileInputStream(file)) {
 			return readFileString(input);
-		} finally {
-			input.close();
 		}
 	}
 	
@@ -377,11 +354,8 @@ public class FileUtils {
 	 * @throws IOException if a reading error occurs
 	 */
 	public static String readFileString(URL url) throws IOException {
-		InputStream input = url.openStream();
-		try {
+		try (InputStream input = url.openStream()) {
 			return readFileString(input);
-		} finally {
-			input.close();
 		}
 	}
 	
@@ -394,7 +368,8 @@ public class FileUtils {
 	 * @throws IOException if a reading error occurs
 	 */
 	public static String readFileString(InputStream input) throws IOException {
-		return readFileString(new InputStreamReader(input, "UTF-8"));
+		return readFileString(new InputStreamReader(input,
+				StandardCharsets.UTF_8));
 	}
 	
 	/**
@@ -423,11 +398,8 @@ public class FileUtils {
 	 */
 	public static void writeFileString(File file, String content)
 	throws IOException {
-		FileOutputStream output = new FileOutputStream(file);
-		try {
+		try (FileOutputStream output = new FileOutputStream(file)) {
 			writeFileString(output, content);
-		} finally {
-			output.close();
 		}
 	}
 
@@ -440,11 +412,9 @@ public class FileUtils {
 	 */
 	public static void writeFileString(OutputStream output, String content)
 	throws IOException {
-		Writer writer = new OutputStreamWriter(output, "UTF-8");
-		try {
+		try (Writer writer = new OutputStreamWriter(output,
+				StandardCharsets.UTF_8)) {
 			writer.write(content);
-		} finally {
-			writer.close();
 		}
 	}
 }
