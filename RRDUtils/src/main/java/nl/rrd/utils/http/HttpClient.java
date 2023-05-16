@@ -301,7 +301,8 @@ public class HttpClient implements Closeable {
 		if (wrotePostParam)
 			writer.write("&");
 		wrotePostParam = true;
-		writer.write(name + "=" + URLEncoder.encode(value, "UTF-8"));
+		writer.write(name + "=" + URLEncoder.encode(value,
+				StandardCharsets.UTF_8));
 		return this;
 	}
 	
