@@ -22,16 +22,12 @@
 
 package nl.rrd.utils.http;
 
-import java.io.UnsupportedEncodingException;
+import nl.rrd.utils.exception.ParseException;
+
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import nl.rrd.utils.exception.ParseException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 /**
  * Methods for creating and parsing URL-encoded parameter strings.
@@ -48,8 +44,8 @@ public class URLParameters {
 	 * @return the parameter string
 	 */
 	public static String getSortedParameterString(Map<String,String> params) {
-		Map<String,String> sortedMap = new LinkedHashMap<String,String>();
-		List<String> keys = new ArrayList<String>(params.keySet());
+		Map<String,String> sortedMap = new LinkedHashMap<>();
+		List<String> keys = new ArrayList<>(params.keySet());
 		Collections.sort(keys);
 		for (String key : keys) {
 			sortedMap.put(key, params.get(key));
@@ -69,13 +65,8 @@ public class URLParameters {
 		for (String key : params.keySet()) {
 			if (builder.length() > 0)
 				builder.append("&");
-			try {
-				builder.append(key + "=" + URLEncoder.encode(params.get(key),
-						"UTF-8"));
-			} catch (UnsupportedEncodingException ex) {
-				throw new RuntimeException("UTF-8 not supported: " +
-						ex.getMessage(), ex);
-			}
+			builder.append(key + "=" + URLEncoder.encode(params.get(key),
+					StandardCharsets.UTF_8));
 		}
 		return builder.toString();
 	}
@@ -89,7 +80,7 @@ public class URLParameters {
 	 */
 	public static Map<String,String> parseParameterString(String paramStr)
 			throws ParseException {
-		Map<String,String> params = new LinkedHashMap<String,String>();
+		Map<String,String> params = new LinkedHashMap<>();
 		String[] paramList = paramStr.split("&");
 		for (String keyValStr : paramList) {
 			String[] keyVal = keyValStr.split("=");
@@ -97,16 +88,12 @@ public class URLParameters {
 				throw new ParseException("Invalid parameter string: " +
 						paramStr);
 			}
-			try {
-				if (keyVal[0].length() == 0) {
-					throw new ParseException(
-							"Empty key in parameter string: " + paramStr);
-				}
-				params.put(keyVal[0], URLDecoder.decode(keyVal[1], "UTF-8"));
-			} catch (UnsupportedEncodingException ex) {
-				throw new RuntimeException("UTF-8 not supported: " +
-						ex.getMessage(), ex);
+			if (keyVal[0].length() == 0) {
+				throw new ParseException(
+						"Empty key in parameter string: " + paramStr);
 			}
+			params.put(keyVal[0], URLDecoder.decode(keyVal[1],
+					StandardCharsets.UTF_8));
 		}
 		return params;
 	}
