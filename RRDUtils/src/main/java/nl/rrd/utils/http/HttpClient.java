@@ -58,6 +58,7 @@ public class HttpClient implements Closeable {
 	private String method = "GET";
 	private String url;
 	private Map<String,String> queryParams = new LinkedHashMap<>();
+	private Long contentLength = null;
 	private Map<String,String> headers = new LinkedHashMap<>();
 	private boolean wrotePostParam = false;
 
@@ -105,6 +106,17 @@ public class HttpClient implements Closeable {
 	 */
 	public HttpClient setMethod(String method) {
 		this.method = method;
+		return this;
+	}
+
+	/**
+	 * Sets the Content-Length header.
+	 *
+	 * @param length the content length
+	 * @return this client (so you can chain method calls)
+	 */
+	public HttpClient setContentLength(long length) {
+		this.contentLength = length;
 		return this;
 	}
 
@@ -196,6 +208,10 @@ public class HttpClient implements Closeable {
 		URL url = new URL(getUrl());
 		HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 		conn.setRequestMethod(method);
+		if (contentLength != null) {
+			conn.setFixedLengthStreamingMode(contentLength);
+			conn.setDoOutput(true);
+		}
 		for (String header : headers.keySet()) {
 			conn.setRequestProperty(header, headers.get(header));
 		}
@@ -231,7 +247,6 @@ public class HttpClient implements Closeable {
 			if (output != null)
 				return output;
 		}
-		conn.setDoOutput(true);
 		OutputStream output = conn.getOutputStream();
 		synchronized (lock) {
 			if (closed) {
@@ -422,6 +437,7 @@ public class HttpClient implements Closeable {
 				output.close();
 		}
 		HttpURLConnection conn = getConnection();
+		conn.setDoOutput(true);
 		int respCode = conn.getResponseCode();
 		if (respCode == -1)
 			throw new IOException("Invalid HTTP response");
