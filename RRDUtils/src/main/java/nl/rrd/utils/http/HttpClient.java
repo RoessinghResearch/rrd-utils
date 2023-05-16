@@ -247,6 +247,7 @@ public class HttpClient implements Closeable {
 			if (output != null)
 				return output;
 		}
+		conn.setDoOutput(true);
 		OutputStream output = conn.getOutputStream();
 		synchronized (lock) {
 			if (closed) {
@@ -437,7 +438,6 @@ public class HttpClient implements Closeable {
 				output.close();
 		}
 		HttpURLConnection conn = getConnection();
-		conn.setDoOutput(true);
 		int respCode = conn.getResponseCode();
 		if (respCode == -1)
 			throw new IOException("Invalid HTTP response");
