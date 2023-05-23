@@ -46,9 +46,9 @@ import java.util.Map;
  * finally to get the response and read data. When you no longer need the
  * client, you should call {@link #close() close()}.
  *
- * <p>It assumes that the server returns response code 2xx on success. For
- * any other response code (including 3xx redirects) it throws a {@link
- * HttpClientException HttpClientException}.</p>
+ * <p>It assumes that the server returns response code 2xx on success. Redirects
+ * (3xx) are automatically handled. For any other response code, it throws an
+ * {@link HttpClientException HttpClientException}.</p>
  * 
  * <p>Any strings will be read and written as UTF-8.</p>
  * 
@@ -62,12 +62,9 @@ public class HttpClient implements Closeable {
 	private Map<String,String> headers = new LinkedHashMap<>();
 	private boolean wrotePostParam = false;
 
-	private HttpURLConnection connection = null;
+	private Connection connection = null;
 	private Map<String,String> responseHeaders = null;
-	private InputStream input = null;
-	private Reader reader = null;
-	private OutputStream output = null;
-	private Writer writer = null;
+
 	private final Object lock = new Object();
 	private boolean closed = false;
 
@@ -94,7 +91,7 @@ public class HttpClient implements Closeable {
 				return;
 			closed = true;
 			if (connection != null)
-				connection.disconnect();
+				connection.close();
 		}
 	}
 
@@ -198,7 +195,7 @@ public class HttpClient implements Closeable {
 	 * @throws IOException if an error occurs while communicating with the HTTP
 	 * server
 	 */
-	private HttpURLConnection getConnection() throws IOException {
+	private Connection getConnection() throws IOException {
 		synchronized (lock) {
 			if (closed)
 				throw new IOException("HttpClient closed");
@@ -206,25 +203,24 @@ public class HttpClient implements Closeable {
 				return this.connection;
 		}
 		URL url = new URL(getUrl());
-		HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-		conn.setRequestMethod(method);
+		HttpURLConnection urlConn = (HttpURLConnection)url.openConnection();
+		urlConn.setRequestMethod(method);
 		if (contentLength != null) {
-			conn.setFixedLengthStreamingMode(contentLength);
-			conn.setDoOutput(true);
+			urlConn.setFixedLengthStreamingMode(contentLength);
+			urlConn.setDoOutput(true);
 		}
 		for (String header : headers.keySet()) {
-			conn.setRequestProperty(header, headers.get(header));
+			urlConn.setRequestProperty(header, headers.get(header));
 		}
+		Connection conn = new Connection();
+		conn.connection = urlConn;
 		synchronized (lock) {
 			if (closed) {
-				conn.disconnect();
+				conn.close();
 				throw new IOException("HttpClient closed");
 			}
-			if (this.connection == null)
-				this.connection = conn;
-			else
-				conn.disconnect();
-			return this.connection;
+			this.connection = conn;
+			return conn;
 		}
 	}
 
@@ -240,25 +236,23 @@ public class HttpClient implements Closeable {
 	 * server
 	 */
 	public OutputStream getOutputStream() throws IOException {
-		HttpURLConnection conn = getConnection();
+		Connection conn = getConnection();
 		synchronized (lock) {
 			if (closed)
 				throw new IOException("HttpClient closed");
-			if (output != null)
-				return output;
+			if (conn.output != null)
+				return conn.output;
 		}
-		conn.setDoOutput(true);
-		OutputStream output = conn.getOutputStream();
+		HttpURLConnection urlConn = conn.connection;
+		urlConn.setDoOutput(true);
+		OutputStream output = urlConn.getOutputStream();
 		synchronized (lock) {
 			if (closed) {
 				output.close();
 				throw new IOException("HttpClient closed");
 			}
-			if (this.output == null)
-				this.output = output;
-			else if (this.output != output)
-				output.close();
-			return this.output;
+			conn.output = output;
+			return output;
 		}
 	}
 
@@ -277,17 +271,16 @@ public class HttpClient implements Closeable {
 		synchronized (lock) {
 			if (closed)
 				throw new IOException("HttpClient closed");
-			if (writer != null)
-				return writer;
+			if (connection != null && connection.writer != null)
+				return connection.writer;
 		}
 		OutputStream out = getOutputStream();
 		synchronized (lock) {
 			if (closed)
 				throw new IOException("HttpClient closed");
-			if (writer != null)
-				return writer;
-			writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
-			return writer;
+			connection.writer = new OutputStreamWriter(out,
+					StandardCharsets.UTF_8);
+			return connection.writer;
 		}
 	}
 	
@@ -308,9 +301,10 @@ public class HttpClient implements Closeable {
 	 */
 	public HttpClient writePostParam(String name, String value)
 			throws IOException {
-		HttpURLConnection conn = getConnection();
-		if (output == null) {
-			conn.setRequestProperty("Content-Type",
+		Connection conn = getConnection();
+		if (conn.output == null) {
+			HttpURLConnection urlConn = conn.connection;
+			urlConn.setRequestProperty("Content-Type",
 					"application/x-www-form-urlencoded");
 		}
 		Writer writer = getWriter();
@@ -335,9 +329,11 @@ public class HttpClient implements Closeable {
 	 * @throws IOException if a writing error occurs
 	 */
 	public HttpClient writeJson(Object obj) throws IOException {
-		HttpURLConnection conn = getConnection();
-		if (output == null)
-			conn.setRequestProperty("Content-Type", "application/json");
+		Connection conn = getConnection();
+		if (conn.output == null) {
+			HttpURLConnection urlConn = conn.connection;
+			urlConn.setRequestProperty("Content-Type", "application/json");
+		}
 		Writer writer = getWriter();
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.writeValue(writer, obj);
@@ -405,7 +401,7 @@ public class HttpClient implements Closeable {
 	public HttpURLConnection getResponse() throws HttpClientException,
 	IOException {
 		getInputStream();
-		return getConnection();
+		return getConnection().connection;
 	}
 	
 	/**
@@ -430,19 +426,24 @@ public class HttpClient implements Closeable {
 		synchronized (lock) {
 			if (closed)
 				throw new IOException("HttpClient closed");
-			if (this.input != null)
-				return this.input;
-			if (writer != null)
-				writer.close();
-			else if (output != null)
-				output.close();
+			if (connection != null && connection.input != null)
+				return connection.input;
 		}
-		HttpURLConnection conn = getConnection();
-		int respCode = conn.getResponseCode();
+		Connection conn = getConnection();
+		synchronized (lock) {
+			if (closed)
+				throw new IOException("HttpClient closed");
+			if (conn.writer != null)
+				conn.writer.close();
+			else if (conn.output != null)
+				conn.output.close();
+		}
+		HttpURLConnection urlConn = conn.connection;
+		int respCode = urlConn.getResponseCode();
 		if (respCode == -1)
 			throw new IOException("Invalid HTTP response");
-		String respMessage = conn.getResponseMessage();
-		Map<String,List<String>> connHeaders = conn.getHeaderFields();
+		String respMessage = urlConn.getResponseMessage();
+		Map<String,List<String>> connHeaders = urlConn.getHeaderFields();
 		responseHeaders = new LinkedHashMap<>();
 		for (String header : connHeaders.keySet()) {
 			if (header == null)
@@ -458,9 +459,9 @@ public class HttpClient implements Closeable {
 		}
 		if (respCode / 100 == 4 || respCode / 100 == 5) {
 			String errorContent = "";
-			InputStream errorStream = conn.getErrorStream();
+			InputStream errorStream = urlConn.getErrorStream();
 			if (errorStream == null)
-				errorStream = conn.getInputStream();
+				errorStream = urlConn.getInputStream();
 			if (errorStream != null) {
 				try {
 					errorContent = FileUtils.readFileString(errorStream);
@@ -473,17 +474,14 @@ public class HttpClient implements Closeable {
 		if (respCode / 100 != 2) {
 			throw new HttpClientException(respCode, respMessage, "");
 		}
-		InputStream input = conn.getInputStream();
+		InputStream input = urlConn.getInputStream();
 		synchronized (lock) {
 			if (closed) {
 				input.close();
 				throw new IOException("HttpClient closed");
 			}
-			if (this.input == null)
-				this.input = input;
-			else if (this.input != input)
-				input.close();
-			return this.input;
+			conn.input = input;
+			return input;
 		}
 	}
 	
@@ -507,17 +505,16 @@ public class HttpClient implements Closeable {
 		synchronized (lock) {
 			if (closed)
 				throw new IOException("HttpClient closed");
-			if (reader != null)
-				return reader;
+			if (connection != null && connection.reader != null)
+				return connection.reader;
 		}
 		InputStream input = getInputStream();
 		synchronized (lock) {
 			if (closed)
 				throw new IOException("HttpClient closed");
-			if (reader != null)
-				return reader;
-			reader = new InputStreamReader(input, StandardCharsets.UTF_8);
-			return reader;
+			connection.reader = new InputStreamReader(input,
+					StandardCharsets.UTF_8);
+			return connection.reader;
 		}
 	}
 
@@ -626,5 +623,17 @@ public class HttpClient implements Closeable {
 	 */
 	public Map<String,String> getResponseHeaders() {
 		return responseHeaders;
+	}
+
+	private static class Connection {
+		public HttpURLConnection connection;
+		public OutputStream output = null;
+		public Writer writer = null;
+		public InputStream input = null;
+		public Reader reader = null;
+
+		public void close() {
+			connection.disconnect();
+		}
 	}
 }
