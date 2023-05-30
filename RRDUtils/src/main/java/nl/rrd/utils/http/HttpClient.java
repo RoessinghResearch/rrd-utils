@@ -39,12 +39,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class can be used to run HTTP requests. At construction it takes a URL.
- * You may configure the client further by setting the HTTP method (default
+ * <b>It is recommended to use the new {@link HttpClient2 HttpClient2}, which is
+ * based on Apache HTTP client, while this class is based on the old
+ * HttpURLConnection class, which sometimes has strange default behaviour.</b>
+ *
+ * <p>This class can be used to run HTTP requests. At construction it takes a
+ * URL. You may configure the client further by setting the HTTP method (default
  * GET) and adding headers and query parameters (if you didn't include them in
  * the URL). After that there are various methods to write data (optional) and
  * finally to get the response and read data. When you no longer need the
- * client, you should call {@link #close() close()}.
+ * client, you should call {@link #close() close()}.</p>
  *
  * <p>It assumes that the server returns response code 2xx on success. Redirects
  * (3xx) are automatically handled. For any other response code, it throws an
