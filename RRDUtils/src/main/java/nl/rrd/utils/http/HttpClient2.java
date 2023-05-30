@@ -31,7 +31,7 @@ import java.util.Map;
  * <li>{@link #writeJson(Object) writeJson(()}<br />
  * {@link #writePostParams(Map) writePostParams()}<br />
  * {@link #writeString(String, ContentType, String) writeString()}<br />
- * {@link #writeBytes(byte[], ContentType, String) writeBytes()}:<br />
+ * {@link #writeBytes(byte[], ContentType) writeBytes()}:<br />
  * Write data without streaming and then get the response.</li>
  * <li>{@link #openRequestStream(ContentType, String) openRequestStream()}:<br />
  * Open a stream where you can write request data. Then get the response when
@@ -206,9 +206,29 @@ public class HttpClient2 implements Closeable {
 	}
 
 	/**
+	 * Creates an entity builder that is already configured with the specified
+	 * content type and encoding.
+	 *
+	 * @param contentType the content type, or null if no content type should be
+	 * included
+	 * @param contentEncoding the content encoding, for example utf-8, or null
+	 * if no content encoding should be included
+	 * @return the entity builder
+	 */
+	private EntityBuilder createEntityBuilder(ContentType contentType,
+			String contentEncoding) {
+		EntityBuilder builder = EntityBuilder.create();
+		if (contentType != null)
+			builder.setContentType(contentType);
+		if (contentEncoding != null)
+			builder.setContentEncoding(contentEncoding);
+		return builder;
+	}
+
+	/**
 	 * Reads the response without writing any data. It returns a response object
-	 * with all the data and methods to process it further. If you want to
-	 * receive data in streaming mode, you can call {@link
+	 * with all the data, and methods to process the data further. If you want
+	 * to receive data in streaming mode, you can call {@link
 	 * #readResponse(HttpClientResponseHandler) readResponse(responseHandler)}
 	 * with your own response handler.
 	 *
@@ -236,15 +256,14 @@ public class HttpClient2 implements Closeable {
 	 */
 	public <T> T readResponse(HttpClientResponseHandler<T> responseHandler)
 			throws IOException {
-		HttpEntity entity = createEntityBuilder(null, null).build();
-		return executeRequest(entity, responseHandler);
+		return executeRequest(null, responseHandler);
 	}
 
 	/**
 	 * Writes the specified object as a JSON string and then reads the response.
-	 * It returns a response object with all the data and methods to process it
-	 * further. If you want to receive data in streaming mode, you can call
-	 * {@link #writeJson(Object, HttpClientResponseHandler)
+	 * It returns a response object with all the data, and methods to process
+	 * the data further. If you want to receive data in streaming mode, you can
+	 * call {@link #writeJson(Object, HttpClientResponseHandler)
 	 * writeJson(obj, responseHandler)} with your own response handler.
 	 *
 	 * @param obj the object to write
@@ -284,9 +303,9 @@ public class HttpClient2 implements Closeable {
 	/**
 	 * Writes the specified POST parameters as a URL-encoded parameter string
 	 * with content type application/x-www-form-urlencoded, and then reads the
-	 * response. It returns a response object with all the data and methods to
-	 * process it further. If you want to receive data in streaming mode, you
-	 * can call {@link #writePostParams(Map, HttpClientResponseHandler)
+	 * response. It returns a response object with all the data, and methods to
+	 * process the data further. If you want to receive data in streaming mode,
+	 * you can call {@link #writePostParams(Map, HttpClientResponseHandler)
 	 * writePostParams(postParams, responseHandler)} with your own response
 	 * handler.
 	 *
@@ -337,8 +356,8 @@ public class HttpClient2 implements Closeable {
 	/**
 	 * Writes a string with the specified content type and encoding, for example
 	 * text/plain and utf-8, and then reads the response. It returns a response
-	 * object with all the data and methods to process it further. If you want
-	 * to receive data in streaming mode, you can call {@link
+	 * object with all the data, and methods to process the data further. If you
+	 * want to receive data in streaming mode, you can call {@link
 	 * #writeString(String, ContentType, String, HttpClientResponseHandler)
 	 * writeString(content, contentType, contentEncoding, responseHandler)} with
 	 * your own response handler.
@@ -390,9 +409,9 @@ public class HttpClient2 implements Closeable {
 	/**
 	 * Writes a byte array with the specified content type, for example
 	 * application/octet-stream, and then reads the response. It returns a
-	 * response object with all the data and methods to process it further. If
-	 * you want to receive data in streaming mode, you can call {@link
-	 * #writeBytes(byte[], ContentType, HttpClientResponseHandler)
+	 * response object with all the data, and methods to process the data
+	 * further. If you want to receive data in streaming mode, you can call
+	 * {@link #writeBytes(byte[], ContentType, HttpClientResponseHandler)
 	 * writeBytes(bs, contentType, responseHandler)} with your own response
 	 * handler.
 	 *
@@ -434,6 +453,27 @@ public class HttpClient2 implements Closeable {
 		return executeRequest(entity, responseHandler);
 	}
 
+	/**
+	 * Opens a request that allows you to write request data to a stream. It
+	 * returns a {@link StreamingRequest StreamingRequest} object. From that
+	 * object, you can first get the stream with {@link
+	 * StreamingRequest#getStream() getStream()} and write data to it. Then you
+	 * can call {@link StreamingRequest#execute() execute()}.
+	 *
+	 * <p>The method {@link StreamingRequest#execute() execute()} returns a
+	 * response object with all the data, and methods to process the data
+	 * further. If you want to receive data in streaming mode, you can call
+	 * {@link #openRequestStream(ContentType, String, HttpClientResponseHandler)
+	 * openRequestStream(contentType, contentEncoding, responseHandler)} with
+	 * your own response handler.</p>
+	 *
+	 * @param contentType the content type, or null if no content type should be
+	 * included
+	 * @param contentEncoding the content encoding, for example utf-8, or null
+	 * if no content encoding should be included
+	 * @return the streaming request
+	 * @throws IOException if a communication error occurs
+	 */
 	public StreamingRequest<HttpResponse> openRequestStream(
 			ContentType contentType, String contentEncoding)
 			throws IOException {
@@ -441,6 +481,29 @@ public class HttpClient2 implements Closeable {
 				new TextResponseHandler());
 	}
 
+	/**
+	 * Opens a request that allows you to write request data to a stream. It
+	 * returns a {@link StreamingRequest StreamingRequest} object. From that
+	 * object, you can first get the stream with {@link
+	 * StreamingRequest#getStream() getStream()} and write data to it. Then you
+	 * can call {@link StreamingRequest#execute() execute()}.
+	 *
+	 * <p>With this method you specify your own response handler, so you can
+	 * receive data in streaming mode for example. Make sure to close the
+	 * response and to consume it with {@link EntityUtils#consume(HttpEntity)
+	 * EntityUtils.consume()} when you're done.</p>
+	 *
+	 * <p>See {@link #openRequestStream(ContentType, String)
+	 * openRequestStream(contentType, contentEncoding)} for an easier version
+	 * of this method without streaming of the response data.</p>
+	 *
+	 * @param contentType the content type, or null if no content type should be
+	 * included
+	 * @param contentEncoding the content encoding, for example utf-8, or null
+	 * if no content encoding should be included
+	 * @return the streaming request
+	 * @throws IOException if a communication error occurs
+	 */
 	public <T> StreamingRequest<T> openRequestStream(ContentType contentType,
 			String contentEncoding,
 			HttpClientResponseHandler<T> responseHandler) throws IOException {
@@ -456,16 +519,16 @@ public class HttpClient2 implements Closeable {
 		}
 	}
 
-	private EntityBuilder createEntityBuilder(ContentType contentType,
-			String contentEncoding) {
-		EntityBuilder builder = EntityBuilder.create();
-		if (contentType != null)
-			builder.setContentType(contentType);
-		if (contentEncoding != null)
-			builder.setContentEncoding(contentEncoding);
-		return builder;
-	}
-
+	/**
+	 * Builds the request with the specified content entity and then executes
+	 * the request.
+	 *
+	 * @param entity the entity with the request content data, or null
+	 * @param responseHandler the response handler
+	 * @return the result of the response handler
+	 * @param <T> the result type of the response handler
+	 * @throws IOException if a communication error occurs
+	 */
 	private <T> T executeRequest(HttpEntity entity,
 			HttpClientResponseHandler<T> responseHandler) throws IOException {
 		FixedLengthRequest<T> request = new FixedLengthRequest<>(entity,
@@ -484,6 +547,11 @@ public class HttpClient2 implements Closeable {
 		}
 	}
 
+	/**
+	 * This class can build, execute and close a request with fixed-length data.
+	 *
+	 * @param <T> the result of the response handler
+	 */
 	private class FixedLengthRequest<T> implements Closeable {
 		private CloseableHttpClient client;
 		private HttpEntity entity;
@@ -494,15 +562,29 @@ public class HttpClient2 implements Closeable {
 		private final Object LOCK = new Object();
 		private boolean closed = false;
 
+		/**
+		 * Constructs a new fixed-length request.
+		 *
+		 * @param entity the entity with the request content data, or null
+		 * @param responseHandler the response handler
+		 */
 		private FixedLengthRequest(HttpEntity entity,
 				HttpClientResponseHandler<T> responseHandler) {
 			this.entity = entity;
 			this.responseHandler = responseHandler;
 			ClassicRequestBuilder requestBuilder = createRequestBuilder();
-			request = requestBuilder.setEntity(entity).build();
+			if (entity != null)
+				requestBuilder.setEntity(entity);
+			request = requestBuilder.build();
 			client = HttpClientBuilder.create().build();
 		}
 
+		/**
+		 * Executes this request.
+		 *
+		 * @return the result of the response handler
+		 * @throws IOException if a communication error occurs
+		 */
 		public T execute() throws IOException {
 			try {
 				return client.execute(request, responseHandler);
@@ -530,6 +612,17 @@ public class HttpClient2 implements Closeable {
 		}
 	}
 
+	/**
+	 * This class is used for requests where you want to stream data to the
+	 * request content. An instance is obtained from {@link
+	 * #openRequestStream(ContentType, String) openRequestStream()}.
+	 *
+	 * <p>When you get this object, you should first call {@link #getStream()
+	 * getStream()} and write the request data to that stream. Then you should
+	 * call {@link #execute() execute()} to get the response.</p>
+	 *
+	 * @param <T> the result of the response handler
+	 */
 	public class StreamingRequest<T> implements Closeable {
 		private CloseableHttpClient client;
 		private HttpEntity entity;
@@ -546,6 +639,16 @@ public class HttpClient2 implements Closeable {
 		private final Object LOCK = new Object();
 		private boolean closed = false;
 
+		/**
+		 * Constructs a new streaming request.
+		 *
+		 * @param contentType the content type, or null if no content type
+		 * should be included
+		 * @param contentEncoding the content encoding, for example utf-8, or
+		 * null if no content encoding should be included
+		 * @param responseHandler the response handler
+		 * @throws IOException if a communication error occurs
+		 */
 		private StreamingRequest(ContentType contentType,
 				String contentEncoding,
 				HttpClientResponseHandler<T> responseHandler)
@@ -568,10 +671,19 @@ public class HttpClient2 implements Closeable {
 			}
 		}
 
+		/**
+		 * Returns the stream that you can use to write the request data.
+		 *
+		 * @return the stream that you can use to write the request data
+		 */
 		public OutputStream getStream() {
 			return output;
 		}
 
+		/**
+		 * Executes the request. This method is run in a worker thread, so it's
+		 * possible to stream data from the main thread.
+		 */
 		private void runRequestThread() {
 			CloseableHttpClient client;
 			synchronized (LOCK) {
@@ -591,6 +703,14 @@ public class HttpClient2 implements Closeable {
 			}
 		}
 
+		/**
+		 * Executes the request. You should call this method after you have
+		 * written the request data to the stream that you got from {@link
+		 * #getStream() getStream()}.
+		 *
+		 * @return the response
+		 * @throws IOException if a communication error occurs
+		 */
 		public T execute() throws IOException {
 			synchronized (LOCK) {
 				if (closed)
@@ -639,7 +759,11 @@ public class HttpClient2 implements Closeable {
 		}
 	}
 
-	public static class TextResponseHandler implements
+	/**
+	 * This is the default response handler that gets all the data from the
+	 * response and returns it as an {@link HttpResponse HttpResponse} object.
+	 */
+	private static class TextResponseHandler implements
 			HttpClientResponseHandler<HttpResponse> {
 		@Override
 		public HttpResponse handleResponse(ClassicHttpResponse response)
