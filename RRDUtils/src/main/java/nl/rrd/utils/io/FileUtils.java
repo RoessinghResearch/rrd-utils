@@ -35,6 +35,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
@@ -372,6 +373,19 @@ public class FileUtils {
 				StandardCharsets.UTF_8));
 	}
 	
+	/**
+	 * Reads the content of the specified file as a string.
+	 *
+	 * @param input the input stream from the file
+	 * @param charset the character set
+	 * @return the content
+	 * @throws IOException if a reading error occurs
+	 */
+	public static String readFileString(InputStream input, Charset charset)
+			throws IOException {
+		return readFileString(new InputStreamReader(input, charset));
+	}
+
 	/**
 	 * Reads the content of the specified file as a string.
 	 * 
