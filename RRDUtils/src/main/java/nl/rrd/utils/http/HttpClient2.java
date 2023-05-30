@@ -14,11 +14,43 @@ import org.slf4j.Logger;
 
 import java.io.*;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * This class can be used to run HTTP requests. At construction it takes a URL.
+ * You may configure the client further by setting the HTTP method (default
+ * GET) and adding headers and query parameters (if you didn't include them in
+ * the URL). After that there are various methods to write data and get the
+ * response.
+ *
+ * <p><ul>
+ * <li>{@link #readResponse() readResponse()}:<br />
+ * Don't write any data but just get the response immediately.</li>
+ * <li>{@link #writeJson(Object) writeJson(()}<br />
+ * {@link #writePostParams(Map) writePostParams()}<br />
+ * {@link #writeString(String, ContentType, String) writeString()}<br />
+ * {@link #writeBytes(byte[], ContentType, String) writeBytes()}:<br />
+ * Write data without streaming and then get the response.</li>
+ * <li>{@link #openRequestStream(ContentType, String) openRequestStream()}:<br />
+ * Open a stream where you can write request data. Then get the response when
+ * you're ready.</li>
+ * </ul></p>
+ *
+ * <p>With the above methods you eventually get a {@link HttpResponse
+ * HttpResponse} object with all the data. Each method also has a version where
+ * you can specify your own response handler. This allows you to read response
+ * data from a stream for example.</p>
+ *
+ * <p>When you no longer need the client, you should call {@link #close()
+ * close()}.</p>
+ *
+ * <p>Redirects (response code 3xx) are automatically handled. Strings will be
+ * read and written as UTF-8 unless specified otherwise.</p>
+ *
+ * @author Dennis Hofs (RRD)
+ */
 public class HttpClient2 implements Closeable {
 	private String method = "GET";
 	private String url;
@@ -30,10 +62,22 @@ public class HttpClient2 implements Closeable {
 	private static final Object LOCK = new Object();
 	private boolean closed = false;
 
+	/**
+	 * Constructs a new HTTP client. If you want to use query parameters in the
+	 * HTTP request, you can specify the URL without query parameters and then
+	 * call {@link #addQueryParam(String, String) addQueryParam()}.
+	 * Alternatively you can include the query parameters in the URL.
+	 *
+	 * @param url the URL
+	 */
 	public HttpClient2(String url) {
 		this.url = url;
 	}
 
+	/**
+	 * Closes this client. You should always call this method when you no
+	 * longer need the client.
+	 */
 	@Override
 	public void close() {
 		synchronized (LOCK) {
@@ -47,6 +91,13 @@ public class HttpClient2 implements Closeable {
 		}
 	}
 
+	/**
+	 * Tries to close the specified Closeable. If it throws an IOException,
+	 * the exception will be logged and this method does not throw the
+	 * exception.
+	 *
+	 * @param closeable the closeable
+	 */
 	private void tryClose(Closeable closeable) {
 		Logger logger = AppComponents.getLogger(
 				HttpClient2.class.getSimpleName());
@@ -57,38 +108,94 @@ public class HttpClient2 implements Closeable {
 		}
 	}
 
+	/**
+	 * Sets the HTTP method. The default is GET.
+	 *
+	 * @param method the HTTP method
+	 * @return this client (so you can chain method calls)
+	 */
 	public HttpClient2 setMethod(String method) {
 		this.method = method;
 		return this;
 	}
 
+	/**
+	 * Adds a query parameter. This will be appended to the request URL.
+	 *
+	 * @param name the parameter name
+	 * @param value the parameter value
+	 * @return this client (so you can chain method calls)
+	 */
 	public HttpClient2 addQueryParam(String name, String value) {
 		queryParams.put(name, value);
 		return this;
 	}
 
+	/**
+	 * Sets a map with query parameters. They will be appended to the request
+	 * URL. This method overwrites any parameters you have added with {@link
+	 * #addQueryParam(String, String) addQueryParam()}.
+	 *
+	 * @param params the query parameters
+	 * @return this client (so you can chain method calls)
+	 */
 	public HttpClient2 setQueryParams(Map<String,String> params) {
 		this.queryParams = params;
 		return this;
 	}
 
+	/**
+	 * Adds a header to the HTTP request. If you use one of the write*() methods
+	 * to write data without streaming, then the Content-Length and Content-Type
+	 * headers will already be added and you should not add them here.
+	 *
+	 * @param name the header name
+	 * @param value the header value
+	 * @return this client (so you can chain method calls)
+	 */
 	public HttpClient2 addHeader(String name, String value) {
 		headers.put(name, value);
 		return this;
 	}
 
+	/**
+	 * Sets a map with the HTTP headers. If you use one of the write*() methods
+	 * to write data without streaming, then the Content-Length and Content-Type
+	 * headers will already be added and you should not add them here. This
+	 * method overwrites any headers you have added with {@link
+	 * #addHeader(String, String) addHeader()}.
+	 *
+	 * @param headers the headers
+	 * @return this client (so you can chain method calls)
+	 */
 	public HttpClient2 setHeaders(Map<String,String> headers) {
 		this.headers = headers;
 		return this;
 	}
 
+	/**
+	 * Returns the URL including query parameters.
+	 *
+	 * @return the URL including query parameters
+	 */
 	public String getUrl() {
 		String url = this.url;
-		if (queryParams != null && !queryParams.isEmpty())
-			url += "?" + URLParameters.getParameterString(queryParams);
+		if (queryParams == null || queryParams.isEmpty())
+			return url;
+		if (url.contains("?"))
+			url += "&";
+		else
+			url += "?";
+		url += URLParameters.getParameterString(queryParams);
 		return url;
 	}
 
+	/**
+	 * Creates a request builder that is already configured with the specified
+	 * HTTP method, URL and headers.
+	 *
+	 * @return the request builder
+	 */
 	private ClassicRequestBuilder createRequestBuilder() {
 		ClassicRequestBuilder builder = ClassicRequestBuilder.create(method)
 				.setUri(getUrl());
@@ -98,8 +205,238 @@ public class HttpClient2 implements Closeable {
 		return builder;
 	}
 
-	public StreamingRequest<Response> openRequestStream(ContentType contentType,
+	/**
+	 * Reads the response without writing any data. It returns a response object
+	 * with all the data and methods to process it further. If you want to
+	 * receive data in streaming mode, you can call {@link
+	 * #readResponse(HttpClientResponseHandler) readResponse(responseHandler)}
+	 * with your own response handler.
+	 *
+	 * @return the response
+	 * @throws IOException if a communication error occurs
+	 */
+	public HttpResponse readResponse() throws IOException {
+		return readResponse(new TextResponseHandler());
+	}
+
+	/**
+	 * Reads the response without writing any data. With this method you specify
+	 * your own response handler, so you can receive data in streaming mode for
+	 * example. Make sure to close the response and to consume it with
+	 * {@link EntityUtils#consume(HttpEntity) EntityUtils.consume()} when you're
+	 * done.
+	 *
+	 * <p>See {@link #readResponse() readResponse()} for an easier non-streaming
+	 * version of this method.</p>
+	 *
+	 * @param responseHandler the response handler
+	 * @return the result of the response handler
+	 * @param <T> the result type of the response handler
+	 * @throws IOException if a communication error occurs
+	 */
+	public <T> T readResponse(HttpClientResponseHandler<T> responseHandler)
+			throws IOException {
+		HttpEntity entity = createEntityBuilder(null, null).build();
+		return executeRequest(entity, responseHandler);
+	}
+
+	/**
+	 * Writes the specified object as a JSON string and then reads the response.
+	 * It returns a response object with all the data and methods to process it
+	 * further. If you want to receive data in streaming mode, you can call
+	 * {@link #writeJson(Object, HttpClientResponseHandler)
+	 * writeJson(obj, responseHandler)} with your own response handler.
+	 *
+	 * @param obj the object to write
+	 * @return the response
+	 * @throws IOException if a communication error occurs
+	 */
+	public HttpResponse writeJson(Object obj) throws IOException {
+		return writeJson(obj, new TextResponseHandler());
+	}
+
+	/**
+	 * Writes the specified object as a JSON string and then reads the response.
+	 * With this method you specify your own response handler, so you can
+	 * receive data in streaming mode for example. Make sure to close the
+	 * response and to consume it with {@link EntityUtils#consume(HttpEntity)
+	 * EntityUtils.consume()} when you're done.
+	 *
+	 * <p>See {@link #writeJson(Object) writeJson(obj)} for an easier
+	 * non-streaming version of this method.</p>
+	 *
+	 * @param obj the object to write
+	 * @param responseHandler the response handler
+	 * @return the result of the response handler
+	 * @param <T> the result type of the response handler
+	 * @throws IOException if a communication error occurs
+	 */
+	public <T> T writeJson(Object obj,
+			HttpClientResponseHandler<T> responseHandler) throws IOException {
+		String json = JsonMapper.generate(obj);
+		HttpEntity entity = createEntityBuilder(
+				ContentType.APPLICATION_JSON, "utf-8")
+				.setText(json)
+				.build();
+		return executeRequest(entity, responseHandler);
+	}
+
+	/**
+	 * Writes the specified POST parameters as a URL-encoded parameter string
+	 * with content type application/x-www-form-urlencoded, and then reads the
+	 * response. It returns a response object with all the data and methods to
+	 * process it further. If you want to receive data in streaming mode, you
+	 * can call {@link #writePostParams(Map, HttpClientResponseHandler)
+	 * writePostParams(postParams, responseHandler)} with your own response
+	 * handler.
+	 *
+	 * @param postParams the POST parameters
+	 * @return the response
+	 * @throws IOException if a communication error occurs
+	 */
+	public HttpResponse writePostParams(Map<String,String> postParams)
+			throws IOException {
+		return writePostParams(postParams, new TextResponseHandler());
+	}
+
+	/**
+	 * Writes the specified POST parameters as a URL-encoded parameter string
+	 * with content type application/x-www-form-urlencoded, and then reads the
+	 * response. With this method you specify your own response handler, so you
+	 * can receive data in streaming mode for example. Make sure to close the
+	 * response and to consume it with {@link EntityUtils#consume(HttpEntity)
+	 * EntityUtils.consume()} when you're done.
+	 *
+	 * <p>See {@link #writePostParams(Map) writePostParams(postParams)} for an
+	 * easier non-streaming version of this method.</p>
+	 *
+	 * @param postParams the POST parameters
+	 * @param responseHandler the response handler
+	 * @return the result of the response handler
+	 * @param <T> the result type of the response handler
+	 * @throws IOException if a communication error occurs
+	 */
+	public <T> T writePostParams(Map<String,String> postParams,
+			HttpClientResponseHandler<T> responseHandler) throws IOException {
+		StringBuilder data = new StringBuilder();
+		for (String key : postParams.keySet()) {
+			if (data.length() > 0)
+				data.append("&");
+			data.append(key);
+			data.append("=");
+			String value = postParams.get(key);
+			data.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+		}
+		HttpEntity entity = createEntityBuilder(
+				ContentType.APPLICATION_FORM_URLENCODED, "utf-8")
+				.setText(data.toString())
+				.build();
+		return executeRequest(entity, responseHandler);
+	}
+
+	/**
+	 * Writes a string with the specified content type and encoding, for example
+	 * text/plain and utf-8, and then reads the response. It returns a response
+	 * object with all the data and methods to process it further. If you want
+	 * to receive data in streaming mode, you can call {@link
+	 * #writeString(String, ContentType, String, HttpClientResponseHandler)
+	 * writeString(content, contentType, contentEncoding, responseHandler)} with
+	 * your own response handler.
+	 *
+	 * @param content the content string
+	 * @param contentType the content type, for example text/plain, or null if
+	 * no content type should be included
+	 * @param contentEncoding the content encoding, for example utf-8, or null
+	 * if no content encoding should be included
+	 * @return the response
+	 * @throws IOException if a communication error occurs
+	 */
+	public HttpResponse writeString(String content, ContentType contentType,
 			String contentEncoding) throws IOException {
+		return writeString(content, contentType, contentEncoding,
+				new TextResponseHandler());
+	}
+
+	/**
+	 * Writes a string with the specified content type and encoding, for example
+	 * text/plain and utf-8, and then reads the response. With this method you
+	 * specify your own response handler, so you can receive data in streaming
+	 * mode for example. Make sure to close the response and to consume it with
+	 * {@link EntityUtils#consume(HttpEntity) EntityUtils.consume()} when you're
+	 * done.
+	 *
+	 * <p>See {@link #writeString(String, ContentType, String)
+	 * writeString(content, contentType, contentEncoding)} for an easier
+	 * non-streaming version of this method.</p>
+	 *
+	 * @param content the content string
+	 * @param contentType the content type, for example text/plain, or null if
+	 * no content type should be included
+	 * @param contentEncoding the content encoding, for example utf-8, or null
+	 * if no content encoding should be included
+	 * @param responseHandler the response handler
+	 * @return the result of the response handler
+	 * @param <T> the result type of the response handler
+	 * @throws IOException if a communication error occurs
+	 */
+	public <T> T writeString(String content, ContentType contentType,
+			String contentEncoding,
+			HttpClientResponseHandler<T> responseHandler) throws IOException {
+		HttpEntity entity = createEntityBuilder(contentType, contentEncoding)
+				.setText(content).build();
+		return executeRequest(entity, responseHandler);
+	}
+
+	/**
+	 * Writes a byte array with the specified content type, for example
+	 * application/octet-stream, and then reads the response. It returns a
+	 * response object with all the data and methods to process it further. If
+	 * you want to receive data in streaming mode, you can call {@link
+	 * #writeBytes(byte[], ContentType, HttpClientResponseHandler)
+	 * writeBytes(bs, contentType, responseHandler)} with your own response
+	 * handler.
+	 *
+	 * @param bs the byte array
+	 * @param contentType the content type, for example
+	 * application/octet-stream, or null if no content type should be included
+	 * @return the response
+	 * @throws IOException if a communication error occurs
+	 */
+	public HttpResponse writeBytes(byte[] bs, ContentType contentType)
+			throws IOException {
+		return writeBytes(bs, contentType, new TextResponseHandler());
+	}
+
+	/**
+	 * Writes a byte array with the specified content type, for example
+	 * application/octet-stream, and then reads the response. With this method
+	 * you specify your own response handler, so you can receive data in
+	 * streaming mode for example. Make sure to close the response and to
+	 * consume it with {@link EntityUtils#consume(HttpEntity)
+	 * EntityUtils.consume()} when you're done.
+	 *
+	 * <p>See {@link #writeBytes(byte[], ContentType)
+	 * writeBytes(bs, contentType)} for an easier non-streaming version of this
+	 * method.</p>
+	 *
+	 * @param bs the byte array
+	 * @param contentType the content type, for example
+	 * application/octet-stream, or null if no content type should be included
+	 * @param responseHandler the response handler
+	 * @return the result of the response handler
+	 * @param <T> the result type of the response handler
+	 * @throws IOException if a communication error occurs
+	 */
+	public <T> T writeBytes(byte[] bs, ContentType contentType,
+			HttpClientResponseHandler<T> responseHandler) throws IOException {
+		HttpEntity entity = createEntityBuilder(contentType, null)
+				.setBinary(bs).build();
+		return executeRequest(entity, responseHandler);
+	}
+
+	public StreamingRequest<HttpResponse> openRequestStream(
+			ContentType contentType, String contentEncoding)
+			throws IOException {
 		return openRequestStream(contentType, contentEncoding,
 				new TextResponseHandler());
 	}
@@ -119,43 +456,14 @@ public class HttpClient2 implements Closeable {
 		}
 	}
 
-	public Response writeJson(Object obj) throws IOException {
-		return writeJson(obj, new TextResponseHandler());
-	}
-
-	public <T> T writeJson(Object obj,
-			HttpClientResponseHandler<T> responseHandler) throws IOException {
-		String json = JsonMapper.generate(obj);
-		HttpEntity entity = EntityBuilder.create()
-				.setContentType(ContentType.APPLICATION_JSON)
-				.setContentEncoding("utf-8")
-				.setText(json)
-				.build();
-		return executeRequest(entity, responseHandler);
-	}
-
-	public Response writePostParams(Map<String,String> postParams)
-			throws IOException {
-		return writePostParams(postParams, new TextResponseHandler());
-	}
-
-	public <T> T writePostParams(Map<String,String> postParams,
-			HttpClientResponseHandler<T> responseHandler) throws IOException {
-		StringBuilder data = new StringBuilder();
-		for (String key : postParams.keySet()) {
-			if (data.length() > 0)
-				data.append("&");
-			data.append(key);
-			data.append("=");
-			String value = postParams.get(key);
-			data.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
-		}
-		HttpEntity entity = EntityBuilder.create()
-				.setContentType(ContentType.APPLICATION_FORM_URLENCODED)
-				.setContentEncoding("utf-8")
-				.setText(data.toString())
-				.build();
-		return executeRequest(entity, responseHandler);
+	private EntityBuilder createEntityBuilder(ContentType contentType,
+			String contentEncoding) {
+		EntityBuilder builder = EntityBuilder.create();
+		if (contentType != null)
+			builder.setContentType(contentType);
+		if (contentEncoding != null)
+			builder.setContentEncoding(contentEncoding);
+		return builder;
 	}
 
 	private <T> T executeRequest(HttpEntity entity,
@@ -243,11 +551,8 @@ public class HttpClient2 implements Closeable {
 				HttpClientResponseHandler<T> responseHandler)
 				throws IOException {
 			try {
-				EntityBuilder entityBuilder = EntityBuilder.create();
-				if (contentType != null)
-					entityBuilder.setContentType(contentType);
-				if (contentEncoding != null)
-					entityBuilder.setContentEncoding(contentEncoding);
+				EntityBuilder entityBuilder = createEntityBuilder(contentType,
+						contentEncoding);
 				input = new PipedInputStream();
 				output = new PipedOutputStream(input);
 				entityBuilder.setStream(input);
@@ -335,62 +640,33 @@ public class HttpClient2 implements Closeable {
 	}
 
 	public static class TextResponseHandler implements
-			HttpClientResponseHandler<Response> {
+			HttpClientResponseHandler<HttpResponse> {
 		@Override
-		public Response handleResponse(ClassicHttpResponse response)
+		public HttpResponse handleResponse(ClassicHttpResponse response)
 				throws HttpException, IOException {
 			try (response) {
 				return doHandleResponse(response);
 			}
 		}
 
-		private Response doHandleResponse(ClassicHttpResponse response)
+		private HttpResponse doHandleResponse(ClassicHttpResponse response)
 				throws HttpException, IOException {
-			Response result = new Response();
-			result.code = response.getCode();
-			result.reason = response.getReasonPhrase();
-			result.headers = new LinkedHashMap<>();
+			HttpResponse result = new HttpResponse();
+			result.setCode(response.getCode());
+			result.setReason(response.getReasonPhrase());
 			for (Header header : response.getHeaders()) {
-				result.headers.put(header.getName().toLowerCase(),
+				result.addHeader(header.getName().toLowerCase(),
 						header.getValue());
 			}
-			HttpEntity entity = response.getEntity();
-			String encoding = entity.getContentEncoding();
-			Charset charset = StandardCharsets.UTF_8;
-			if (encoding != null && Charset.isSupported(encoding)) {
-				charset = Charset.forName(encoding);
+			try (HttpEntity entity = response.getEntity()) {
+				result.setContentType(entity.getContentType());
+				result.setContentEncoding(entity.getContentEncoding());
+				try (InputStream input = entity.getContent()) {
+					result.setContent(FileUtils.readFileBytes(input));
+				}
+				EntityUtils.consume(entity);
 			}
-			try (InputStream input = entity.getContent()) {
-				result.content = FileUtils.readFileString(input, charset);
-			}
-			EntityUtils.consume(entity);
 			return result;
-		}
-	}
-
-	public static class Response {
-		private int code;
-		private String reason;
-		private Map<String,String> headers;
-		private String content;
-
-		private Response() {
-		}
-
-		public int getCode() {
-			return code;
-		}
-
-		public String getReason() {
-			return reason;
-		}
-
-		public Map<String, String> getHeaders() {
-			return headers;
-		}
-
-		public String getContent() {
-			return content;
 		}
 	}
 }
