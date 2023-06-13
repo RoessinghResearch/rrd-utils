@@ -344,7 +344,9 @@ public class HttpClient2 implements Closeable {
 			data.append(key);
 			data.append("=");
 			String value = postParams.get(key);
-			data.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+			// URLEncoder.encode(String, Charset) not supported in Android 26
+			data.append(URLEncoder.encode(value,
+					StandardCharsets.UTF_8.name()));
 		}
 		HttpEntity entity = createEntityBuilder(
 				ContentType.APPLICATION_FORM_URLENCODED, "utf-8")

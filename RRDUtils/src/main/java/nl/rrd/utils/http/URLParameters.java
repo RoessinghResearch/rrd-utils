@@ -24,6 +24,7 @@ package nl.rrd.utils.http;
 
 import nl.rrd.utils.exception.ParseException;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -65,8 +66,15 @@ public class URLParameters {
 		for (String key : params.keySet()) {
 			if (builder.length() > 0)
 				builder.append("&");
-			builder.append(key + "=" + URLEncoder.encode(params.get(key),
-					StandardCharsets.UTF_8));
+			String encodedValue;
+			try {
+				// URLEncoder.encode(String, Charset) not supported in Android 26
+				encodedValue = URLEncoder.encode(params.get(key),
+						StandardCharsets.UTF_8.name());
+			} catch (UnsupportedEncodingException ex) {
+				throw new RuntimeException(ex.getMessage(), ex);
+			}
+			builder.append(key + "=" + encodedValue);
 		}
 		return builder.toString();
 	}
@@ -92,8 +100,15 @@ public class URLParameters {
 				throw new ParseException(
 						"Empty key in parameter string: " + paramStr);
 			}
-			params.put(keyVal[0], URLDecoder.decode(keyVal[1],
-					StandardCharsets.UTF_8));
+			String value;
+			try {
+				// URLEncoder.decode(String, Charset) not supported in Android 26
+				value = URLDecoder.decode(keyVal[1],
+						StandardCharsets.UTF_8.name());
+			} catch (UnsupportedEncodingException ex) {
+				throw new RuntimeException(ex.getMessage(), ex);
+			}
+			params.put(keyVal[0], value);
 		}
 		return params;
 	}

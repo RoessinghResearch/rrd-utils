@@ -315,8 +315,9 @@ public class HttpClient implements Closeable {
 		if (wrotePostParam)
 			writer.write("&");
 		wrotePostParam = true;
+		// URLEncoder.encode(String, Charset) not supported in Android 26
 		writer.write(name + "=" + URLEncoder.encode(value,
-				StandardCharsets.UTF_8));
+				StandardCharsets.UTF_8.name()));
 		return this;
 	}
 	
