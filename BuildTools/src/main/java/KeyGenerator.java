@@ -31,6 +31,7 @@ public class KeyGenerator {
 	public static final String TYPE_PASSWORD = "password";
 	public static final String TYPE_ALPHANUM_PASSWORD = "alphanum_password";
 	public static final String TYPE_SECURE_PASSWORD = "secure_password";
+	public static final String TYPE_HEX_PASSWORD = "hex_password";
 	public static final String TYPE_PHPMYADMIN_BLOWFISH =
 			"phpmyadmin_blowfish";
 	public static final String TYPE_BASE64 = "base64";
@@ -39,7 +40,7 @@ public class KeyGenerator {
 	private static final String CONSONANTS = "bcdfghjklmnpqrstvwxz";
 	private static final String VOWELS = "aeiouy";
 	private static final String SPECIALS = "!@#$%&*-=+";
-	
+
 	private static SecureRandom random = new SecureRandom();
 	
 	private static String[] generateKeys(String type, Integer size,
@@ -55,6 +56,9 @@ public class KeyGenerator {
 					break;
 				case TYPE_SECURE_PASSWORD:
 					result[i] = generateSecurePassword(size);
+					break;
+				case TYPE_HEX_PASSWORD:
+					result[i] = generateHexPassword(size);
 					break;
 				case TYPE_PHPMYADMIN_BLOWFISH:
 					result[i] = generatePhpMyAdminBlowfish(size);
@@ -138,6 +142,18 @@ public class KeyGenerator {
 		}
 		return result.toString();
 	}
+
+	private static String generateHexPassword(Integer size) {
+		if (size == null)
+			size = 12;
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < size; i++) {
+			int n = random.nextInt(16);
+			char c = Integer.toHexString(n).charAt(0);
+			result.append(c);
+		}
+		return result.toString();
+	}
 	
 	private static String generatePhpMyAdminBlowfish(Integer size) {
 		StringBuilder chars = new StringBuilder();
@@ -206,6 +222,9 @@ public class KeyGenerator {
 			out.println("        --size: number of characters, default 12");
 			out.println();
 			out.println("    - secure_password: password with alphanumeric and special characters");
+			out.println("        --size: number of characters, default 12");
+			out.println();
+			out.println("    - hex_password: password with hexadecimal characters");
 			out.println("        --size: number of characters, default 12");
 			out.println();
 			out.println("    - phpmyadmin_blowfish:");
