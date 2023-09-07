@@ -25,6 +25,8 @@ package nl.rrd.utils;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -232,8 +234,25 @@ public class DataFormatter {
 	 * @param indent the number of indentations to append
 	 */
 	private void indent(StringBuffer buffer, int indent) {
-		for (int i = 0; i < indent; i++) {
-			buffer.append(INDENT);
+		buffer.append(INDENT.repeat(indent));
+	}
+
+	public String indentBlock(String s, int indent) {
+		String indentStr = INDENT.repeat(indent);
+		StringBuilder result = new StringBuilder();
+		Pattern regex = Pattern.compile("\r\n|\r|\n");
+		Matcher m = regex.matcher(s);
+		int current = 0;
+		while (m.find(current)) {
+			String line = s.substring(current, m.start());
+			String newline = m.group();
+			result.append(indentStr);
+			result.append(line);
+			result.append(newline);
+			current = m.end();
 		}
+		result.append(indentStr);
+		result.append(s.substring(current));
+		return result.toString();
 	}
 }
