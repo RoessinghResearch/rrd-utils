@@ -26,13 +26,10 @@ import nl.rrd.utils.datetime.DateTimeUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 
 public class CsvUtils {
 	public static Writer createWriter(File file) throws IOException {
@@ -57,9 +54,7 @@ public class CsvUtils {
 	}
 	
 	public static String valueToString(Object value) {
-		DecimalFormatSymbols symbols = new DecimalFormatSymbols(
-				Locale.getDefault());
-		char decimal = symbols.getDecimalSeparator();
+		char decimal = ',';
 		if (value == null) {
 			return "NULL";
 		} else if (value instanceof Number) {
