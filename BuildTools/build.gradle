@@ -5,13 +5,19 @@ plugins {
 
 group = 'nl.rrd'
 version = '1.0.0'
-sourceCompatibility = 11
-targetCompatibility = 11
-archivesBaseName = 'buildtools'
+
+base {
+	archivesName = 'buildtools'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
 
 distributions {
 	main {
-		distributionBaseName = archivesBaseName
+		distributionBaseName = base.archivesName.get()
 		contents {
 			from configurations.compileClasspath
 			from jar

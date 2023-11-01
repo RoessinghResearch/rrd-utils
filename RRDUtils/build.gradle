@@ -8,12 +8,18 @@ plugins {
 
 group = 'nl.rrd'
 version = '3.0.1'
-sourceCompatibility = 11
-targetCompatibility = 11
-archivesBaseName = 'rrd-utils'
 
 repositories {
 	mavenCentral()
+}
+
+base {
+	archivesName = 'rrd-utils'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
@@ -43,7 +49,7 @@ java {
 
 distributions {
 	main {
-		distributionBaseName = archivesBaseName
+		distributionBaseName = base.archivesName.get()
 		contents {
 			from configurations.compileClasspath
 			from jar
@@ -63,7 +69,7 @@ javadoc {
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
-			artifactId = archivesBaseName
+			artifactId = base.archivesName.get()
 			from components.java
 			
 			pom {
