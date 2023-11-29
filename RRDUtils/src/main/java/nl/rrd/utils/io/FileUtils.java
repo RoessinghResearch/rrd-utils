@@ -208,7 +208,7 @@ public class FileUtils {
 	 * stream
 	 * @throws IOException if a read/write error occurs
 	 */
-	 private static void copyStream(InputStream in, OutputStream out,
+	 public static void copyStream(InputStream in, OutputStream out,
 	 		long start, Long len) throws IOException {
 		long skipped = 0;
 		while (skipped < start) {
