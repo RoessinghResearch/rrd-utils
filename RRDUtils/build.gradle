@@ -23,10 +23,10 @@ java {
 }
 
 dependencies {
-	api 'com.fasterxml.jackson.core:jackson-core:2.15.3'
-	api 'com.fasterxml.jackson.core:jackson-annotations:2.15.3'
-	api 'com.fasterxml.jackson.core:jackson-databind:2.15.3'
-	api 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
+	api 'com.fasterxml.jackson.core:jackson-core:2.16.0'
+	api 'com.fasterxml.jackson.core:jackson-annotations:2.16.0'
+	api 'com.fasterxml.jackson.core:jackson-databind:2.16.0'
+	api 'org.apache.httpcomponents.client5:httpclient5:5.2.3'
 	api 'org.slf4j:slf4j-api:2.0.9'
 	testImplementation 'junit:junit:4.13.2'
 }
