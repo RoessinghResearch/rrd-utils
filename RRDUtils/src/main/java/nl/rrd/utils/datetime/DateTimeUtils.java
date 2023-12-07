@@ -453,7 +453,7 @@ public class DateTimeUtils {
 		LocalDateTime localDateTime;
 		try {
 			localDateTime = parser.parse(dateTimeString, LocalDateTime::from);
-		} catch (IllegalArgumentException ex) {
+		} catch (DateTimeParseException ex) {
 			throw new ParseException("Invalid date/time string: " +
 					dateTimeString + ": " + ex.getMessage(), ex);
 		}
