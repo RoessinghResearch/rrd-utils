@@ -49,12 +49,12 @@ public class CsvUtils {
 	}
 
 	public static void writeCsvHeader(Writer writer) throws IOException {
-		String newline = System.getProperty("line.separator");
+		String newline = System.lineSeparator();
 		writer.write("sep=;" + newline);
 	}
 	
 	public static String valueToString(Object value) {
-		char decimal = ',';
+		char decimal = '.';
 		if (value == null) {
 			return "NULL";
 		} else if (value instanceof Number) {
@@ -65,17 +65,13 @@ public class CsvUtils {
 			return s;
 		} else if (value instanceof Boolean) {
 			return value.toString();
-		} else if (value instanceof LocalDate) {
-			LocalDate date = (LocalDate)value;
+		} else if (value instanceof LocalDate date) {
 			return date.format(DateTimeUtils.DATE_FORMAT);
-		} else if (value instanceof LocalTime) {
-			LocalTime time = (LocalTime)value;
+		} else if (value instanceof LocalTime time) {
 			return time.format(DateTimeUtils.SQL_TIME_FORMAT);
-		} else if (value instanceof LocalDateTime) {
-			LocalDateTime time = (LocalDateTime)value;
+		} else if (value instanceof LocalDateTime time) {
 			return time.format(DateTimeUtils.SQL_DATE_TIME_FORMAT);
-		} else if (value instanceof ZonedDateTime) {
-			ZonedDateTime time = (ZonedDateTime)value;
+		} else if (value instanceof ZonedDateTime time) {
 			return time.format(DateTimeUtils.SQL_DATE_TIME_FORMAT);
 		} else {
 			return '"' + value.toString().replaceAll("\"", "\"\"") + '"';
