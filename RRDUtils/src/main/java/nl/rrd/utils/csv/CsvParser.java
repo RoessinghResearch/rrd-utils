@@ -21,11 +21,12 @@
  */
 
 package nl.rrd.utils.csv;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.LineNumberReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import nl.rrd.utils.exception.ParseException;
 
@@ -35,6 +36,19 @@ public class CsvParser implements Closeable {
 	
 	public CsvParser(LineNumberReader reader) {
 		this.reader = reader;
+	}
+
+	public static CsvParser fromStreamWithUtf8Bom(InputStream input)
+			throws IOException {
+		int skipped = 0;
+		while (skipped < 3) {
+			int len = (int)input.skip(3 - skipped);
+			if (len == 0)
+				throw new IOException("Failed to skip UTF-8 BOM");
+			skipped += len;
+		}
+		return new CsvParser(new LineNumberReader(new InputStreamReader(
+				input, StandardCharsets.UTF_8)));
 	}
 
 	public char getSeparator() {
@@ -52,6 +66,18 @@ public class CsvParser implements Closeable {
 	
 	public int getLineNumber() {
 		return reader.getLineNumber() + 1;
+	}
+
+	public void readSepLine() throws ParseException, IOException {
+		String line = reader.readLine();
+		if (line == null)
+			throw new IOException("End of file");
+		Pattern regex = Pattern.compile("sep=(.)");
+		Matcher m = regex.matcher(line);
+		if (!m.matches())
+			throw new ParseException("Invalid separator line: " + line);
+		char sep = m.group(1).charAt(0);
+		setSeparator(sep);
 	}
 	
 	public List<String> readLineColumns() throws ParseException, IOException {
@@ -82,7 +108,7 @@ public class CsvParser implements Closeable {
 					start = i + 1;
 				} else {
 					prevQuote = true;
-					stringBuilder.append(line.substring(start, i));
+					stringBuilder.append(line, start, i);
 					start = i;
 				}
 			} else if (prevQuote) {
