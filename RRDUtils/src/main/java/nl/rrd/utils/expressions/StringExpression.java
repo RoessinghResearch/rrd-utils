@@ -22,17 +22,22 @@
 
 package nl.rrd.utils.expressions;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import nl.rrd.utils.exception.LineNumberParseException;
 import nl.rrd.utils.exception.ParseException;
 import nl.rrd.utils.io.LineColumnNumberReader;
+import nl.rrd.utils.json.JsonMapper;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
 
 public class StringExpression implements Expression {
 	private List<Segment> segments;
@@ -46,8 +51,7 @@ public class StringExpression implements Expression {
 			throws EvaluationException {
 		StringBuilder result = new StringBuilder();
 		for (Segment segment : segments) {
-			if (segment instanceof LiteralSegment) {
-				LiteralSegment literal = (LiteralSegment)segment;
+			if (segment instanceof LiteralSegment literal) {
 				result.append(literal.string);
 			} else {
 				ExpressionSegment expr = (ExpressionSegment)segment;
@@ -62,8 +66,7 @@ public class StringExpression implements Expression {
 	public List<Expression> getChildren() {
 		List<Expression> result = new ArrayList<>();
 		for (Segment segment : segments) {
-			if (segment instanceof ExpressionSegment) {
-				ExpressionSegment expr = (ExpressionSegment)segment;
+			if (segment instanceof ExpressionSegment expr) {
 				result.add(expr.expression);
 			}
 		}
@@ -93,8 +96,7 @@ public class StringExpression implements Expression {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 		for (Segment segment : segments) {
-			if (segment instanceof LiteralSegment) {
-				LiteralSegment literal = (LiteralSegment)segment;
+			if (segment instanceof LiteralSegment literal) {
 				result.append(literal.string);
 			} else {
 				ExpressionSegment expr = (ExpressionSegment)segment;
@@ -103,11 +105,25 @@ public class StringExpression implements Expression {
 		}
 		return result.toString();
 	}
-	
-	private class Segment {
+
+	@Override
+	public String toCode() {
+		StringBuilder result = new StringBuilder();
+		for (Segment segment : segments) {
+			if (segment instanceof LiteralSegment literal) {
+				result.append(literal.string);
+			} else {
+				ExpressionSegment expr = (ExpressionSegment)segment;
+				result.append("${" + expr.expression.toCode() + "}");
+			}
+		}
+		return JsonMapper.generate(result.toString());
+	}
+
+	private static class Segment {
 	}
 	
-	private class LiteralSegment extends Segment {
+	private static class LiteralSegment extends Segment {
 		private String string;
 		
 		private LiteralSegment(String string) {
@@ -115,7 +131,7 @@ public class StringExpression implements Expression {
 		}
 	}
 	
-	private class ExpressionSegment extends Segment {
+	private static class ExpressionSegment extends Segment {
 		private Expression expression;
 		
 		private ExpressionSegment(Expression expression) {
@@ -173,7 +189,7 @@ public class StringExpression implements Expression {
 			parser.currSegment.append(parser.input, parser.currSegmentStart,
 					end - parser.currSegmentStart);
 		}
-		if (parser.currSegment.length() > 0) {
+		if (parser.currSegment.length() != 0) {
 			parser.result.add(new LiteralSegment(
 					parser.currSegment.toString()));
 		}
@@ -253,7 +269,7 @@ public class StringExpression implements Expression {
 		return expression;
 	}
 	
-	private class StringExpressionParser {
+	private static class StringExpressionParser {
 		private char[] input;
 		
 		private StringBuilder currSegment = new StringBuilder();
@@ -265,6 +281,41 @@ public class StringExpression implements Expression {
 		
 		private StringExpressionParser(String s) {
 			input = s.toCharArray();
+		}
+	}
+
+	public static class PlainSerializer
+			extends JsonSerializer<StringExpression> {
+		@Override
+		public void serialize(StringExpression stringExpression,
+				JsonGenerator jsonGenerator,
+				SerializerProvider serializerProvider) throws IOException {
+			String json = stringExpression.toCode();
+			String decoded;
+			try {
+				decoded = JsonMapper.parse(json, String.class);
+			} catch (ParseException ex) {
+				throw new RuntimeException("Failed to parse JSON code: " +
+						ex.getMessage(), ex);
+			}
+			jsonGenerator.writeString(decoded);
+		}
+	}
+
+	public static class PlainDeserializer
+			extends JsonDeserializer<StringExpression> {
+		@Override
+		public StringExpression deserialize(JsonParser jsonParser,
+				DeserializationContext deserializationContext)
+				throws IOException, JacksonException {
+			String s = jsonParser.getValueAsString();
+			try {
+				return new StringExpression(s);
+			} catch (ParseException ex) {
+				throw new JsonParseException(jsonParser,
+						"Invalid string expression: " + s + ": " +
+						ex.getMessage(), ex);
+			}
 		}
 	}
 }

@@ -324,42 +324,42 @@ public class ExpressionParser {
 	private Expression createOperatorExpression(Token operator,
 			Expression operand1, Expression operand2)
 			throws LineNumberParseException {
-		switch (operator.getType()) {
-			case ASSIGN:
-				return new AssignExpression(operand1, operator, operand2);
-			case OR:
-				return new OrExpression(operand1, operand2);
-			case AND:
-				return new AndExpression(operand1, operand2);
-			case IN:
-				return new InExpression(operand1, operand2);
-			case LESS_THAN:
-				return new LessThanExpression(operand1, operand2);
-			case LESS_EQUAL:
-				return new LessEqualExpression(operand1, operand2);
-			case EQUAL:
-				return new EqualExpression(operand1, operand2);
-			case NOT_EQUAL:
-				return new NotEqualExpression(operand1, operand2);
-			case STRICT_EQUAL:
-				return new StrictEqualExpression(operand1, operand2);
-			case NOT_STRICT_EQUAL:
-				return new NotStrictEqualExpression(operand1, operand2);
-			case GREATER_EQUAL:
-				return new GreaterEqualExpression(operand1, operand2);
-			case GREATER_THAN:
-				return new GreaterThanExpression(operand1, operand2);
-			case ADD:
-				return new AddExpression(operand1, operand2);
-			case SUBTRACT:
-				return new SubtractExpression(operand1, operand2);
-			case MULTIPLY:
-				return new MultiplyExpression(operand1, operand2);
-			case DIVIDE:
-				return new DivideExpression(operand1, operand2);
-			default:
+		return switch (operator.getType()) {
+			case ASSIGN ->
+				new AssignExpression(operand1, operator, operand2);
+			case OR ->
+				new OrExpression(operand1, operand2);
+			case AND ->
+				new AndExpression(operand1, operand2);
+			case IN ->
+				new InExpression(operand1, operand2);
+			case LESS_THAN ->
+				new LessThanExpression(operand1, operand2);
+			case LESS_EQUAL ->
+				new LessEqualExpression(operand1, operand2);
+			case EQUAL ->
+				new EqualExpression(operand1, operand2);
+			case NOT_EQUAL ->
+				new NotEqualExpression(operand1, operand2);
+			case STRICT_EQUAL ->
+				new StrictEqualExpression(operand1, operand2);
+			case NOT_STRICT_EQUAL ->
+				new NotStrictEqualExpression(operand1, operand2);
+			case GREATER_EQUAL ->
+				new GreaterEqualExpression(operand1, operand2);
+			case GREATER_THAN ->
+				new GreaterThanExpression(operand1, operand2);
+			case ADD ->
+				new AddExpression(operand1, operand2);
+			case SUBTRACT ->
+				new SubtractExpression(operand1, operand2);
+			case MULTIPLY ->
+				new MultiplyExpression(operand1, operand2);
+			case DIVIDE ->
+				new DivideExpression(operand1, operand2);
+			default ->
 				throw new RuntimeException("Unknown operator");
-		}
+		};
 	}
 	
 	private Expression doReadOperand(boolean require)
@@ -508,15 +508,13 @@ public class ExpressionParser {
 	private Expression readPostfixOperator(Token.Type token,
 			Expression parentOperand) throws LineNumberParseException,
 			IOException {
-		switch (token) {
-			case DOT:
-				return readDot(parentOperand);
-			case BRACKET_OPEN:
-				return readIndex(parentOperand);
-			default:
+		return switch (token) {
+			case DOT -> readDot(parentOperand);
+			case BRACKET_OPEN -> readIndex(parentOperand);
+			default ->
 				throw new RuntimeException("Unknown postfix operator: " +
 						token);
-		}
+		};
 	}
 	
 	private Expression readDot(Expression parentOperand)
@@ -684,7 +682,7 @@ public class ExpressionParser {
 				tokenizer.getColNum());
 	}
 	
-	private class ExpressionElement {
+	private static class ExpressionElement {
 		public Expression operand = null;
 		public Token operator = null;
 		

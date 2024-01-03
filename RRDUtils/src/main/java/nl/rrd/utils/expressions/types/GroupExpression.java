@@ -22,15 +22,11 @@
 
 package nl.rrd.utils.expressions.types;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import nl.rrd.utils.expressions.EvaluationException;
 import nl.rrd.utils.expressions.Expression;
 import nl.rrd.utils.expressions.Value;
+
+import java.util.*;
 
 public class GroupExpression implements Expression {
 	private Expression expression;
@@ -78,5 +74,10 @@ public class GroupExpression implements Expression {
 	@Override
 	public String toString() {
 		return "(" + expression + ")";
+	}
+
+	@Override
+	public String toCode() {
+		return "(" + expression.toCode() + ")";
 	}
 }

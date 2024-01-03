@@ -22,6 +22,19 @@
 
 package nl.rrd.utils.expressions;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import nl.rrd.utils.exception.ParseException;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +62,8 @@ import java.util.Set;
  * 
  * @author Dennis Hofs (RRD)
  */
+@JsonSerialize(using=Expression.ExpressionSerializer.class)
+@JsonDeserialize(using=Expression.ExpressionDeserializer.class)
 public interface Expression {
 	
 	/**
@@ -83,4 +98,45 @@ public interface Expression {
 	 * @return the variable names
 	 */
 	Set<String> getVariableNames();
+
+	/**
+	 * Returns a code string for this expression.
+	 *
+	 * @return a code string for this expression
+	 */
+	String toCode();
+
+	class ExpressionSerializer extends JsonSerializer<Expression> {
+		@Override
+		public void serialize(Expression expression,
+				JsonGenerator jsonGenerator,
+				SerializerProvider serializerProvider) throws IOException {
+			jsonGenerator.writeString(expression.toCode());
+		}
+	}
+
+	class ExpressionDeserializer extends JsonDeserializer<Expression> {
+		@Override
+		public Expression deserialize(JsonParser jsonParser,
+				DeserializationContext deserializationContext)
+				throws IOException, JacksonException {
+			String s = jsonParser.getValueAsString();
+			ExpressionParser parser = new ExpressionParser(s);
+			Expression expr1, expr2;
+			try {
+				expr1 = parser.readExpression();
+				expr2 = parser.readExpression();
+			} catch (ParseException ex) {
+				throw new JsonParseException(jsonParser,
+						"Invalid expression: " + s + ": " + ex.getMessage(),
+						ex);
+			}
+			if (expr2 != null) {
+				throw new JsonParseException(jsonParser,
+						"Invalid expression: " + s + ": " +
+						"Found multiple expressions");
+			}
+			return expr1;
+		}
+	}
 }

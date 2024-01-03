@@ -22,16 +22,12 @@
 
 package nl.rrd.utils.expressions.types;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import nl.rrd.utils.expressions.EvaluationException;
 import nl.rrd.utils.expressions.Expression;
 import nl.rrd.utils.expressions.Token;
 import nl.rrd.utils.expressions.Value;
+
+import java.util.*;
 
 public class DotExpression implements Expression {
 	private Expression parentOperand;
@@ -61,8 +57,7 @@ public class DotExpression implements Expression {
 		}
 		Map<?,?> map = (Map<?,?>)parent.getValue();
 		String name = null;
-		if (dotOperand instanceof ValueExpression) {
-			ValueExpression valueExpr = (ValueExpression)dotOperand;
+		if (dotOperand instanceof ValueExpression valueExpr) {
 			if (valueExpr.getToken().getType() == Token.Type.NAME) {
 				name = valueExpr.getToken().getValue().toString();
 			}
@@ -99,11 +94,9 @@ public class DotExpression implements Expression {
 
 	@Override
 	public Set<String> getVariableNames() {
-		Set<String> result = new HashSet<>();
-		result.addAll(parentOperand.getVariableNames());
+		Set<String> result = new HashSet<>(parentOperand.getVariableNames());
 		boolean dotOperandIsName = false;
-		if (dotOperand instanceof ValueExpression) {
-			ValueExpression valueExpr = (ValueExpression)dotOperand;
+		if (dotOperand instanceof ValueExpression valueExpr) {
 			if (valueExpr.getToken().getType() == Token.Type.NAME) {
 				dotOperandIsName = true;
 			}
@@ -116,5 +109,10 @@ public class DotExpression implements Expression {
 	@Override
 	public String toString() {
 		return parentOperand + "." + dotOperand;
+	}
+
+	@Override
+	public String toCode() {
+		return parentOperand.toCode() + "." + dotOperand.toCode();
 	}
 }

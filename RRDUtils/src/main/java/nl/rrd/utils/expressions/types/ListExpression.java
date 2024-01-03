@@ -22,15 +22,11 @@
 
 package nl.rrd.utils.expressions.types;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import nl.rrd.utils.expressions.EvaluationException;
 import nl.rrd.utils.expressions.Expression;
 import nl.rrd.utils.expressions.Value;
+
+import java.util.*;
 
 public class ListExpression implements Expression {
 	private List<Expression> elements;
@@ -84,6 +80,17 @@ public class ListExpression implements Expression {
 			if (builder.length() > 0)
 				builder.append(", ");
 			builder.append(elem);
+		}
+		return "[" + builder + "]";
+	}
+
+	@Override
+	public String toCode() {
+		StringBuilder builder = new StringBuilder();
+		for (Expression elem : elements) {
+			if (builder.length() > 0)
+				builder.append(", ");
+			builder.append(elem.toCode());
 		}
 		return "[" + builder + "]";
 	}

@@ -22,16 +22,12 @@
 
 package nl.rrd.utils.expressions.types;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import nl.rrd.utils.expressions.EvaluationException;
 import nl.rrd.utils.expressions.Expression;
 import nl.rrd.utils.expressions.Token;
 import nl.rrd.utils.expressions.Value;
+
+import java.util.*;
 
 public class ValueExpression implements Expression {
 	private Token token;
@@ -80,6 +76,11 @@ public class ValueExpression implements Expression {
 	
 	@Override
 	public String toString() {
+		return token.getText();
+	}
+
+	@Override
+	public String toCode() {
 		return token.getText();
 	}
 }

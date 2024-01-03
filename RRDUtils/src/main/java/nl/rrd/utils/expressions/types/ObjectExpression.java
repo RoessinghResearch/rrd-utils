@@ -22,16 +22,11 @@
 
 package nl.rrd.utils.expressions.types;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import nl.rrd.utils.expressions.EvaluationException;
 import nl.rrd.utils.expressions.Expression;
 import nl.rrd.utils.expressions.Value;
+
+import java.util.*;
 
 public class ObjectExpression implements Expression {
 	private List<KeyValue> properties;
@@ -102,7 +97,20 @@ public class ObjectExpression implements Expression {
 		}
 		return "{" + builder + "}";
 	}
-	
+
+	@Override
+	public String toCode() {
+		StringBuilder builder = new StringBuilder();
+		for (KeyValue prop : properties) {
+			if (builder.length() > 0)
+				builder.append(", ");
+			builder.append(prop.key.toCode());
+			builder.append(": ");
+			builder.append(prop.value.toCode());
+		}
+		return "{" + builder + "}";
+	}
+
 	public static class KeyValue {
 		private Expression key;
 		private Expression value;

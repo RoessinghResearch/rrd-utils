@@ -22,17 +22,13 @@
 
 package nl.rrd.utils.expressions.types;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import nl.rrd.utils.exception.LineNumberParseException;
 import nl.rrd.utils.expressions.EvaluationException;
 import nl.rrd.utils.expressions.Expression;
 import nl.rrd.utils.expressions.Token;
 import nl.rrd.utils.expressions.Value;
+
+import java.util.*;
 
 public class AssignExpression implements Expression {
 	private Expression variableOperand;
@@ -41,12 +37,11 @@ public class AssignExpression implements Expression {
 	
 	public AssignExpression(Expression variableOperand, Token operator,
 			Expression valueOperand) throws LineNumberParseException {
-		if (!(variableOperand instanceof ValueExpression)) {
+		if (!(variableOperand instanceof ValueExpression variableExpr)) {
 			throw new LineNumberParseException(
 					"First operand of assign expression must be a variable",
 					operator.getLineNum(), operator.getColNum());
 		}
-		ValueExpression variableExpr = (ValueExpression)variableOperand;
 		Token variableToken = variableExpr.getToken();
 		if (variableToken.getType() != Token.Type.NAME &&
 				variableToken.getType() != Token.Type.DOLLAR_VARIABLE) {
@@ -109,5 +104,10 @@ public class AssignExpression implements Expression {
 	@Override
 	public String toString() {
 		return variableOperand + " = " + valueOperand;
+	}
+
+	@Override
+	public String toCode() {
+		return variableOperand.toCode() + " = " + valueOperand.toCode();
 	}
 }

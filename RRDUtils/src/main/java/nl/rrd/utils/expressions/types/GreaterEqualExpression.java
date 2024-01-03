@@ -22,15 +22,11 @@
 
 package nl.rrd.utils.expressions.types;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import nl.rrd.utils.expressions.EvaluationException;
 import nl.rrd.utils.expressions.Expression;
 import nl.rrd.utils.expressions.Value;
+
+import java.util.*;
 
 public class GreaterEqualExpression implements Expression {
 	private Expression operand1;
@@ -105,5 +101,10 @@ public class GreaterEqualExpression implements Expression {
 	@Override
 	public String toString() {
 		return operand1 + " >= " + operand2;
+	}
+
+	@Override
+	public String toCode() {
+		return operand1.toCode() + " >= " + operand2.toCode();
 	}
 }
