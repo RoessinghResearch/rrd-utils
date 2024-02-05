@@ -44,12 +44,13 @@ public class I18nUtils {
 			if (parts[i].length() == 0)
 				throw new ParseException("Empty subtag in language: " + tag);
 		}
-		if (parts.length == 1)
-			return new Locale(parts[0]);
-		else if (parts.length == 2)
-			return new Locale(parts[0], parts[1]);
-		else
-			return new Locale(parts[0], parts[1], parts[2]);
+		Locale.Builder builder = new Locale.Builder();
+		builder.setLanguage(parts[0]);
+		if (parts.length > 1)
+			builder.setRegion(parts[1]);
+		if (parts.length > 2)
+			builder.setVariant(parts[2]);
+		return builder.build();
 	}
 
 	/**

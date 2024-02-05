@@ -22,20 +22,17 @@
 
 package nl.rrd.utils.http;
 
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Helper methods for OAuth.
@@ -77,8 +74,8 @@ public class OAuthUtils {
 		String urlStr = baseUrl + "?" + URLParameters.getParameterString(
 				allParams);
 		try {
-			return new URL(urlStr);
-		} catch (MalformedURLException ex) {
+			return new URI(urlStr).toURL();
+		} catch (URISyntaxException | MalformedURLException ex) {
 			throw new RuntimeException("Invalid URL: " + urlStr + ": " +
 					ex.getMessage(), ex);
 		}

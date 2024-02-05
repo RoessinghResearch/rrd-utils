@@ -26,9 +26,13 @@ dependencies {
 	api 'com.fasterxml.jackson.core:jackson-core:2.16.1'
 	api 'com.fasterxml.jackson.core:jackson-annotations:2.16.1'
 	api 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
-	api 'org.apache.httpcomponents.client5:httpclient5:5.3'
-	api 'org.slf4j:slf4j-api:2.0.10'
+	api 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
+	api 'org.slf4j:slf4j-api:2.0.11'
 	testImplementation 'junit:junit:4.13.2'
+}
+
+tasks.withType(JavaCompile) {
+	options.deprecation = true
 }
 
 distributions {

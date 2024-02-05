@@ -30,9 +30,7 @@ import nl.rrd.utils.exception.ParseException;
 import nl.rrd.utils.io.FileUtils;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -206,7 +204,14 @@ public class HttpClient implements Closeable {
 			if (this.connection != null)
 				return this.connection;
 		}
-		URL url = new URL(getUrl());
+		String urlStr = getUrl();
+		URL url;
+		try {
+			url = new URI(urlStr).toURL();
+		} catch (URISyntaxException | MalformedURLException ex) {
+			throw new IllegalArgumentException("Invalid URL: " + urlStr + ": " +
+					ex.getMessage(), ex);
+		}
 		HttpURLConnection urlConn = (HttpURLConnection)url.openConnection();
 		urlConn.setRequestMethod(method);
 		if (contentLength != null) {
