@@ -44,12 +44,11 @@ public class SqlDateSerializer extends JsonSerializer<Object> {
 	public void serialize(Object value, JsonGenerator jgen,
 			SerializerProvider provider) throws IOException,
 			JsonProcessingException {
-		if (!(value instanceof LocalDate)) {
+		if (!(value instanceof LocalDate date)) {
 			throw new JsonGenerationException(
 					"Can't serialize type to date: " +
 					value.getClass().getName(), jgen);
 		}
-		LocalDate date = (LocalDate)value;
 		jgen.writeString(date.format(DateTimeFormatter.ofPattern(
 				"yyyy-MM-dd")));
 	}

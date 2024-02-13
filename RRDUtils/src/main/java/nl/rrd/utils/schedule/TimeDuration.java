@@ -22,7 +22,17 @@
 
 package nl.rrd.utils.schedule;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import nl.rrd.utils.exception.ParseException;
+
+import java.io.IOException;
 
 /**
  * This class specifies a duration with a precision of milliseconds. It
@@ -81,9 +91,8 @@ public class TimeDuration {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof TimeDuration))
+		if (!(obj instanceof TimeDuration cmp))
 			return false;
-		TimeDuration cmp = (TimeDuration)obj;
 		if (count != cmp.count)
 			return false;
 		if (unit != cmp.unit)
@@ -112,7 +121,7 @@ public class TimeDuration {
 	public static TimeDuration parse(String s, TimeUnit min, TimeUnit max)
 	throws ParseException {
 		String trimmed = s.trim();
-		if (trimmed.length() == 0)
+		if (trimmed.isEmpty())
 			throw new ParseException("Invalid time duration: " + s);
 		String[] split = trimmed.split("\\s+");
 		if (split.length != 2)
@@ -122,13 +131,34 @@ public class TimeDuration {
 		try {
 			count = Integer.parseInt(split[0]);
 			unit = TimeUnit.parse(split[1], min, max);
-		} catch (NumberFormatException ex) {
-			throw new ParseException("Invalid time duration: " + s, ex);
 		} catch (IllegalArgumentException ex) {
 			throw new ParseException("Invalid time duration: " + s, ex);
 		}
 		if (count < 0)
 			throw new ParseException("Invalid time duration: " + s);
 		return new TimeDuration(count, unit);
+	}
+
+	public static class Serializer extends JsonSerializer<TimeDuration> {
+		@Override
+		public void serialize(TimeDuration value, JsonGenerator gen,
+				SerializerProvider serializers) throws IOException {
+			gen.writeString(value.toString());
+		}
+	}
+
+	public static class Deserializer extends JsonDeserializer<TimeDuration> {
+		@Override
+		public TimeDuration deserialize(JsonParser p,
+				DeserializationContext ctxt) throws IOException,
+				JacksonException {
+			String val = p.readValueAs(String.class);
+			try {
+				return TimeDuration.parse(val, null, null);
+			} catch (ParseException ex) {
+				throw new JsonParseException(p, "Invalid time duration: " +
+						val + ": " + ex.getMessage(), p.getTokenLocation(), ex);
+			}
+		}
 	}
 }

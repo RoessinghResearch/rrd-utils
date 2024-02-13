@@ -44,12 +44,11 @@ public class SqlTimeSerializer extends JsonSerializer<Object> {
 	public void serialize(Object value, JsonGenerator jgen,
 			SerializerProvider provider) throws IOException,
 			JsonProcessingException {
-		if (!(value instanceof LocalTime)) {
+		if (!(value instanceof LocalTime time)) {
 			throw new JsonGenerationException(
 					"Can't serialize type to time: " +
 					value.getClass().getName(), jgen);
 		}
-		LocalTime time = (LocalTime)value;
 		jgen.writeString(time.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 	}
 }
