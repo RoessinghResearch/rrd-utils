@@ -50,7 +50,8 @@ extends JsonDeserializer<ZonedDateTime> {
 			return DateTimeUtils.parseIsoDateTime(val, ZonedDateTime.class);
 		} catch (ParseException ex) {
 			throw new JsonParseException(jp, "Invalid ISO date/time string: " +
-					val + ": " + ex.getMessage(), jp.getTokenLocation(), ex);
+					val + ": " + ex.getMessage(), jp.currentTokenLocation(),
+					ex);
 		}
 	}
 }

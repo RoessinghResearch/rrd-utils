@@ -49,7 +49,7 @@ extends JsonDeserializer<LocalTime> {
 			return parser.parse(val, LocalTime::from);
 		} catch (IllegalArgumentException ex) {
 			throw new JsonParseException(jp, "Invalid time string: " + val +
-					": " + ex.getMessage(), jp.getTokenLocation(), ex);
+					": " + ex.getMessage(), jp.currentTokenLocation(), ex);
 		}
 	}
 }

@@ -50,7 +50,8 @@ extends JsonDeserializer<LocalDateTime> {
 			return parser.parse(val, LocalDateTime::from);
 		} catch (IllegalArgumentException ex) {
 			throw new JsonParseException(jp, "Invalid date/time string: " +
-					val + ": " + ex.getMessage(), jp.getTokenLocation(), ex);
+					val + ": " + ex.getMessage(), jp.currentTokenLocation(),
+					ex);
 		}
 	}
 }

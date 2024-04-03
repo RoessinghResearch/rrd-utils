@@ -49,7 +49,8 @@ extends JsonDeserializer<Instant> {
 			return DateTimeUtils.parseIsoDateTime(val, Instant.class);
 		} catch (ParseException ex) {
 			throw new JsonParseException(jp, "Invalid ISO date/time string: " +
-					val + ": " + ex.getMessage(), jp.getTokenLocation(), ex);
+					val + ": " + ex.getMessage(), jp.currentTokenLocation(),
+					ex);
 		}
 	}
 }

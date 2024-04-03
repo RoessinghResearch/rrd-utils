@@ -157,7 +157,8 @@ public class TimeDuration {
 				return TimeDuration.parse(val, null, null);
 			} catch (ParseException ex) {
 				throw new JsonParseException(p, "Invalid time duration: " +
-						val + ": " + ex.getMessage(), p.getTokenLocation(), ex);
+						val + ": " + ex.getMessage(), p.currentTokenLocation(),
+						ex);
 			}
 		}
 	}

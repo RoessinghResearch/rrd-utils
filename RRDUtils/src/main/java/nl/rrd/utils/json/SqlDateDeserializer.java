@@ -49,7 +49,7 @@ public class SqlDateDeserializer extends JsonDeserializer<LocalDate> {
 			return parser.parse(val, LocalDate::from);
 		} catch (IllegalArgumentException ex) {
 			throw new JsonParseException(jp, "Invalid date string: " + val +
-					": " + ex.getMessage(), jp.getTokenLocation(), ex);
+					": " + ex.getMessage(), jp.currentTokenLocation(), ex);
 		}
 	}
 }
