@@ -62,11 +62,8 @@ public class PropertyReader {
 			} else {
 				value = propSpec.getGetMethod().invoke(obj);
 			}
-		} catch (IllegalAccessException ex) {
-			exception = ex;
-		} catch (IllegalArgumentException ex) {
-			exception = ex;
-		} catch (InvocationTargetException ex) {
+		} catch (IllegalAccessException | IllegalArgumentException |
+				 InvocationTargetException ex) {
 			exception = ex;
 		}
 		if (exception != null) {
