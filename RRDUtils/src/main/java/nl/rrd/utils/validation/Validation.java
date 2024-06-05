@@ -228,4 +228,20 @@ public class Validation {
 			throw new ValidationException("Value is null");
 		return obj;
 	}
+
+	/**
+	 * Validates that a string is not null and not empty and not only
+	 * white-space.
+	 *
+	 * @param s the string
+	 * @return the string
+	 * @throws ValidationException if the string is null or empty
+	 */
+	public static String validateNotEmpty(String s) throws ValidationException {
+		if (s == null)
+			throw new ValidationException("Value is null");
+		if (s.trim().isEmpty())
+			throw new ValidationException("Value is empty");
+		return s;
+	}
 }

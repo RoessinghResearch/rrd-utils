@@ -97,11 +97,11 @@ public class ObjectValidation {
 		if (validationResult.isEmpty())
 			return null;
 		StringBuilder result = new StringBuilder();
-		String newline = System.getProperty("line.separator");
+		String newline = System.lineSeparator();
 		for (String prop : validationResult.keySet()) {
 			List<String> errors = validationResult.get(prop);
 			for (String error : errors) {
-				if (result.length() > 0)
+				if (!result.isEmpty())
 					result.append(newline);
 				result.append(String.format(
 						"Invalid value for property \"%s\": %s", prop, error));
@@ -128,6 +128,9 @@ public class ObjectValidation {
 		} else if (annot.annotationType() == ValidateNotNull.class) {
 			Object val = PropertyReader.readProperty(obj, field.getName());
 			Validation.validateNotNull(val);
+		} else if (annot.annotationType() == ValidateNotEmpty.class) {
+			Object val = PropertyReader.readProperty(obj, field.getName());
+			Validation.validateNotEmpty(TypeConversion.getString(val));
 		} else if (annot.annotationType() == ValidateRegex.class) {
 			ValidateRegex regexAnnot = (ValidateRegex)annot;
 			Object val = PropertyReader.readProperty(obj, field.getName());
