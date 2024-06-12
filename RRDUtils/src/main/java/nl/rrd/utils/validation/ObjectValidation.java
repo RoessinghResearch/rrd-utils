@@ -101,7 +101,7 @@ public class ObjectValidation {
 		for (String prop : validationResult.keySet()) {
 			List<String> errors = validationResult.get(prop);
 			for (String error : errors) {
-				if (!result.isEmpty())
+				if (result.length() != 0)
 					result.append(newline);
 				result.append(String.format(
 						"Invalid value for property \"%s\": %s", prop, error));
