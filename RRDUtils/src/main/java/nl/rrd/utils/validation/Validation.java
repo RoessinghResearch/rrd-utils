@@ -144,7 +144,7 @@ public class Validation {
 	 */
 	public static String validateEmail(String email)
 			throws ValidationException {
-		if (email.length() == 0)
+		if (email.isEmpty())
 			throw new ValidationException("Empty value");
 		int localDomainSep = email.lastIndexOf('@');
 		if (localDomainSep == -1)
