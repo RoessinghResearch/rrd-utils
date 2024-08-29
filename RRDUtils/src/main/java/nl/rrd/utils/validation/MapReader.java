@@ -121,7 +121,7 @@ public class MapReader {
 			return Validation.validateStringLength(readString(key), minLen,
 					maxLen);
 		} catch (ValidationException ex) {
-			throw new ParseException(ex.getMessage(), ex);
+			throw createKeyParseException(key, ex);
 		}
 	}
 
@@ -146,7 +146,7 @@ public class MapReader {
 		try {
 			return Validation.validateStringLength(s, minLen, maxLen);
 		} catch (ValidationException ex) {
-			throw new ParseException(ex.getMessage(), ex);
+			throw createKeyParseException(key, ex);
 		}
 	}
 	
@@ -166,7 +166,7 @@ public class MapReader {
 		try {
 			return Validation.validateStringRegex(readString(key), regex);
 		} catch (ValidationException ex) {
-			throw new ParseException(ex.getMessage(), ex);
+			throw createKeyParseException(key, ex);
 		}
 	}
 	
@@ -190,7 +190,7 @@ public class MapReader {
 		try {
 			return Validation.validateStringRegex(s, regex);
 		} catch (ValidationException ex) {
-			throw new ParseException(ex.getMessage(), ex);
+			throw createKeyParseException(key, ex);
 		}
 	}
 	
@@ -212,9 +212,8 @@ public class MapReader {
 		} catch (NoSuchMethodException | IllegalAccessException |
 				InvocationTargetException ex) {
 		}
-		throw new ParseException(
-				"Invalid value for enum type " + enumClass.getName() +
-				": " + val);
+		throw createKeyParseException(key, new ParseException(
+				"Invalid enum value: " + val));
 	}
 	
 	/**
@@ -229,7 +228,12 @@ public class MapReader {
 	 * or it can't be converted to an integer
 	 */
 	public int readInt(String key) throws ParseException {
-		return TypeConversion.getInt(readObject(key));
+		Object obj = readObject(key);
+		try {
+			return TypeConversion.getInt(obj);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -249,7 +253,11 @@ public class MapReader {
 		Object obj = readObject(key, defaultVal);
 		if (obj == null)
 			return null;
-		return TypeConversion.getInt(obj);
+		try {
+			return TypeConversion.getInt(obj);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -269,10 +277,11 @@ public class MapReader {
 	 */
 	public int readIntRange(String key, Integer min, Integer max)
 			throws ParseException {
+		int n = readInt(key);
 		try {
-			return Validation.validateIntRange(readInt(key), min, max);
+			return Validation.validateIntRange(n, min, max);
 		} catch (ValidationException ex) {
-			throw new ParseException(ex.getMessage(), ex);
+			throw createKeyParseException(key, ex);
 		}
 	}
 	
@@ -299,7 +308,7 @@ public class MapReader {
 		try {
 			return Validation.validateIntRange(n, min, max);
 		} catch (ValidationException ex) {
-			throw new ParseException(ex.getMessage(), ex);
+			throw createKeyParseException(key, ex);
 		}
 	}
 	
@@ -315,7 +324,12 @@ public class MapReader {
 	 * or it can't be converted to a long
 	 */
 	public long readLong(String key) throws ParseException {
-		return TypeConversion.getLong(readObject(key));
+		Object obj = readObject(key);
+		try {
+			return TypeConversion.getLong(obj);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -335,7 +349,11 @@ public class MapReader {
 		Object obj = readObject(key, defaultVal);
 		if (obj == null)
 			return null;
-		return TypeConversion.getLong(obj);
+		try {
+			return TypeConversion.getLong(obj);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -353,10 +371,11 @@ public class MapReader {
 	 */
 	public long readLongRange(String key, Long min, Long max)
 			throws ParseException {
+		long n = readLong(key);
 		try {
-			return Validation.validateLongRange(readLong(key), min, max);
+			return Validation.validateLongRange(n, min, max);
 		} catch (ValidationException ex) {
-			throw new ParseException(ex.getMessage(), ex);
+			throw createKeyParseException(key, ex);
 		}
 	}
 	
@@ -383,7 +402,7 @@ public class MapReader {
 		try {
 			return Validation.validateLongRange(n, min, max);
 		} catch (ValidationException ex) {
-			throw new ParseException(ex.getMessage(), ex);
+			throw createKeyParseException(key, ex);
 		}
 	}
 	
@@ -399,7 +418,12 @@ public class MapReader {
 	 * or it can't be converted to a double
 	 */
 	public double readDouble(String key) throws ParseException {
-		return TypeConversion.getDouble(readObject(key));
+		Object obj = readObject(key);
+		try {
+			return TypeConversion.getDouble(obj);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -419,7 +443,11 @@ public class MapReader {
 		Object obj = readObject(key, defaultVal);
 		if (obj == null)
 			return null;
-		return TypeConversion.getDouble(obj);
+		try {
+			return TypeConversion.getDouble(obj);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -434,7 +462,12 @@ public class MapReader {
 	 * or it can't be converted to a boolean
 	 */
 	public boolean readBoolean(String key) throws ParseException {
-		return TypeConversion.getBoolean(readObject(key));
+		Object obj = readObject(key);
+		try {
+			return TypeConversion.getBoolean(obj);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -454,7 +487,11 @@ public class MapReader {
 		Object obj = readObject(key, defaultVal);
 		if (obj == null)
 			return null;
-		return TypeConversion.getBoolean(obj);
+		try {
+			return TypeConversion.getBoolean(obj);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -471,7 +508,12 @@ public class MapReader {
 	 * @param <T> the return type
 	 */
 	public <T> T readJson(String key, Class<T> clazz) throws ParseException {
-		return TypeConversion.getJson(readObject(key), clazz);
+		Object obj = readObject(key);
+		try {
+			return TypeConversion.getJson(obj, clazz);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -490,7 +532,11 @@ public class MapReader {
 	 */
 	public <T> T readJson(String key, Class<T> clazz, T defaultVal)
 			throws ParseException {
-		return TypeConversion.getJson(readObject(key, defaultVal), clazz);
+		try {
+			return TypeConversion.getJson(readObject(key, defaultVal), clazz);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -511,7 +557,12 @@ public class MapReader {
 	 */
 	public <T> T readJson(String key, TypeReference<T> typeRef)
 			throws ParseException {
-		return TypeConversion.getJson(readObject(key), typeRef);
+		Object obj = readObject(key);
+		try {
+			return TypeConversion.getJson(obj, typeRef);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
 	}
 	
 	/**
@@ -533,6 +584,16 @@ public class MapReader {
 	 */
 	public <T> T readJson(String key, TypeReference<T> typeRef, T defaultVal)
 			throws ParseException {
-		return TypeConversion.getJson(readObject(key, defaultVal), typeRef);
+		Object obj = readObject(key, defaultVal);
+		try {
+			return TypeConversion.getJson(obj, typeRef);
+		} catch (ParseException ex) {
+			throw createKeyParseException(key, ex);
+		}
+	}
+
+	private ParseException createKeyParseException(String key, Exception ex) {
+		return new ParseException("Invalid value for key \"" + key + "\": " +
+				ex.getMessage(), ex);
 	}
 }
