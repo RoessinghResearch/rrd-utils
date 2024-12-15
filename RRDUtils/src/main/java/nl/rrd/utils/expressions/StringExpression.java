@@ -30,6 +30,8 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import nl.rrd.utils.exception.LineNumberParseException;
 import nl.rrd.utils.exception.ParseException;
 import nl.rrd.utils.io.LineColumnNumberReader;
@@ -39,6 +41,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 
+@JsonSerialize(using=StringExpression.PlainSerializer.class)
+@JsonDeserialize(using=StringExpression.PlainDeserializer.class)
 public class StringExpression implements Expression {
 	private List<Segment> segments;
 	
