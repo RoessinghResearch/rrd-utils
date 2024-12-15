@@ -51,7 +51,7 @@ public class CsvHelper implements Closeable {
 		writer.write(newline);
 	}
 
-	public void createDataRow(List<Object> values) throws IOException {
+	public void createDataRow(List<?> values) throws IOException {
 		boolean first = true;
 		for (Object value : values) {
 			if (!first)
