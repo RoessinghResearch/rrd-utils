@@ -67,6 +67,15 @@ public class ObjectExpression implements Expression {
 	}
 
 	@Override
+	public void substituteChild(int index, Expression expr) {
+		KeyValue prop = properties.get(index / 2);
+		if (index % 2 == 0)
+			prop.key = expr;
+		else
+			prop.value = expr;
+	}
+
+	@Override
 	public List<Expression> getDescendants() {
 		List<Expression> result = new ArrayList<>();
 		for (Expression child : getChildren()) {

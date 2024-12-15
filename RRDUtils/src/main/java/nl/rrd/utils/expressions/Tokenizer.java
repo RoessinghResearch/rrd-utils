@@ -51,11 +51,12 @@ import nl.rrd.utils.io.LineColumnNumberReader;
  */
 public class Tokenizer {
 	private LineColumnNumberReader reader;
-	
+	private ExpressionParserConfig config = new ExpressionParserConfig();
+
 	private int currTokenLineNum;
 	private int currTokenColNum;
 	private long currTokenPos;
-	private List<NameOrFixedToken> fixedTokens = new ArrayList<>();
+	private List<NameOrFixedToken> fixedTokens = null;
 	private StringBuilder buffer = new StringBuilder();
 
 	private List<NameOrFixedToken> candidateNameOrFixedTokens;
@@ -77,7 +78,20 @@ public class Tokenizer {
 	
 	public Tokenizer(LineColumnNumberReader reader) {
 		this.reader = reader;
-		fixedTokens.add(new NameOrFixedToken("=", Token.Type.ASSIGN));
+	}
+
+	public ExpressionParserConfig getConfig() {
+		return config;
+	}
+
+	private List<NameOrFixedToken> getFixedTokens() {
+		if (fixedTokens != null)
+			return fixedTokens;
+		fixedTokens = new ArrayList<>();
+		if (config.isAllowSingleEquals())
+			fixedTokens.add(new NameOrFixedToken("=", Token.Type.EQUAL));
+		else
+			fixedTokens.add(new NameOrFixedToken("=", Token.Type.ASSIGN));
 		fixedTokens.add(new NameOrFixedToken("||", Token.Type.OR));
 		fixedTokens.add(new NameOrFixedToken("&&", Token.Type.AND));
 		fixedTokens.add(new NameOrFixedToken("!", Token.Type.NOT));
@@ -106,6 +120,7 @@ public class Tokenizer {
 		fixedTokens.add(new NameOrFixedToken("true", Token.Type.BOOLEAN));
 		fixedTokens.add(new NameOrFixedToken("false", Token.Type.BOOLEAN));
 		fixedTokens.add(new NameOrFixedToken("null", Token.Type.NULL));
+		return fixedTokens;
 	}
 	
 	/**
@@ -208,7 +223,7 @@ public class Tokenizer {
 	private List<NameOrFixedToken> getCandidateNameOrFixedTokens(char c) {
 		List<NameOrFixedToken> result = new ArrayList<>();
 		String s = buffer.toString() + c;
-		for (NameOrFixedToken fixedToken : fixedTokens) {
+		for (NameOrFixedToken fixedToken : getFixedTokens()) {
 			if (fixedToken.text.startsWith(s))
 				result.add(fixedToken);
 		}
@@ -410,7 +425,6 @@ public class Tokenizer {
 							charColNum);
 				} else if (c == '"' || c == '\\') {
 					special = c;
-					break;
 				} else {
 					charColNum++;
 					stringValue.append(c);
@@ -698,7 +712,7 @@ public class Tokenizer {
 		return new LineNumberParseException(message, lineNum, colNum);
 	}
 	
-	private class NameOrFixedToken {
+	private static class NameOrFixedToken {
 		public String text;
 		public Token.Type token;
 		

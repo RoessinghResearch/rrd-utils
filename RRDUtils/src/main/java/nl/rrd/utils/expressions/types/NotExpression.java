@@ -53,6 +53,12 @@ public class NotExpression implements Expression {
 	}
 
 	@Override
+	public void substituteChild(int index, Expression expr) {
+		if (index == 0)
+			operand = expr;
+	}
+
+	@Override
 	public List<Expression> getDescendants() {
 		List<Expression> result = new ArrayList<>();
 		for (Expression child : getChildren()) {

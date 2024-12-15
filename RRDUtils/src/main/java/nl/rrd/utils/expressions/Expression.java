@@ -83,6 +83,14 @@ public interface Expression {
 	 * @return the child expressions
 	 */
 	List<Expression> getChildren();
+
+	/**
+	 * Substitutes the child expression at the specified index.
+	 *
+	 * @param index the index
+	 * @param expr the new expression
+	 */
+	void substituteChild(int index, Expression expr);
 	
 	/**
 	 * Returns all descendant expressions of this expression.

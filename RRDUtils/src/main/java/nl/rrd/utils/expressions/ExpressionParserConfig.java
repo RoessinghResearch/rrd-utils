@@ -25,6 +25,7 @@ package nl.rrd.utils.expressions;
 public class ExpressionParserConfig {
 	private boolean allowPlainVariables = true;
 	private boolean allowDollarVariables = false;
+	private boolean allowSingleEquals = false;
 
 	public boolean isAllowPlainVariables() {
 		return allowPlainVariables;
@@ -40,5 +41,13 @@ public class ExpressionParserConfig {
 
 	public void setAllowDollarVariables(boolean allowDollarVariables) {
 		this.allowDollarVariables = allowDollarVariables;
+	}
+
+	public boolean isAllowSingleEquals() {
+		return allowSingleEquals;
+	}
+
+	public void setAllowSingleEquals(boolean allowSingleEquals) {
+		this.allowSingleEquals = allowSingleEquals;
 	}
 }

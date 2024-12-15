@@ -78,6 +78,20 @@ public class StringExpression implements Expression {
 	}
 
 	@Override
+	public void substituteChild(int index, Expression expr) {
+		int currExprIndex = 0;
+		for (Segment segment : segments) {
+			if (segment instanceof ExpressionSegment exprSegment) {
+				if (index == currExprIndex) {
+					exprSegment.expression = expr;
+					return;
+				}
+				currExprIndex++;
+			}
+		}
+	}
+
+	@Override
 	public List<Expression> getDescendants() {
 		List<Expression> result = new ArrayList<>();
 		for (Expression child : getChildren()) {

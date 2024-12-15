@@ -83,6 +83,14 @@ public class DotExpression implements Expression {
 	}
 
 	@Override
+	public void substituteChild(int index, Expression expr) {
+		if (index == 0)
+			parentOperand = expr;
+		else if (index == 1)
+			dotOperand = expr;
+	}
+
+	@Override
 	public List<Expression> getDescendants() {
 		List<Expression> result = new ArrayList<>();
 		for (Expression child : getChildren()) {

@@ -55,6 +55,11 @@ public class ListExpression implements Expression {
 	}
 
 	@Override
+	public void substituteChild(int index, Expression expr) {
+		elements.set(index, expr);
+	}
+
+	@Override
 	public List<Expression> getDescendants() {
 		List<Expression> result = new ArrayList<>();
 		for (Expression child : getChildren()) {

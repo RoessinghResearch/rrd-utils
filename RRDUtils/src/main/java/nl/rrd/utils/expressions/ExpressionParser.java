@@ -22,38 +22,16 @@
 
 package nl.rrd.utils.expressions;
 
+import nl.rrd.utils.exception.LineNumberParseException;
+import nl.rrd.utils.exception.ParseException;
+import nl.rrd.utils.expressions.types.*;
+import nl.rrd.utils.io.LineColumnNumberReader;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-
-import nl.rrd.utils.exception.LineNumberParseException;
-import nl.rrd.utils.exception.ParseException;
-import nl.rrd.utils.expressions.types.AddExpression;
-import nl.rrd.utils.expressions.types.AndExpression;
-import nl.rrd.utils.expressions.types.AssignExpression;
-import nl.rrd.utils.expressions.types.DivideExpression;
-import nl.rrd.utils.expressions.types.DotExpression;
-import nl.rrd.utils.expressions.types.EqualExpression;
-import nl.rrd.utils.expressions.types.GreaterEqualExpression;
-import nl.rrd.utils.expressions.types.GreaterThanExpression;
-import nl.rrd.utils.expressions.types.GroupExpression;
-import nl.rrd.utils.expressions.types.InExpression;
-import nl.rrd.utils.expressions.types.IndexExpression;
-import nl.rrd.utils.expressions.types.LessEqualExpression;
-import nl.rrd.utils.expressions.types.LessThanExpression;
-import nl.rrd.utils.expressions.types.ListExpression;
-import nl.rrd.utils.expressions.types.MultiplyExpression;
-import nl.rrd.utils.expressions.types.NotEqualExpression;
-import nl.rrd.utils.expressions.types.NotExpression;
-import nl.rrd.utils.expressions.types.NotStrictEqualExpression;
-import nl.rrd.utils.expressions.types.ObjectExpression;
-import nl.rrd.utils.expressions.types.OrExpression;
-import nl.rrd.utils.expressions.types.StrictEqualExpression;
-import nl.rrd.utils.expressions.types.SubtractExpression;
-import nl.rrd.utils.expressions.types.ValueExpression;
-import nl.rrd.utils.io.LineColumnNumberReader;
 
 /**
  * An expression parser can read {@link Expression Expression}s from text input.
@@ -67,7 +45,7 @@ import nl.rrd.utils.io.LineColumnNumberReader;
  * @author Dennis Hofs (RRD)
  */
 public class ExpressionParser {
-	private ExpressionParserConfig config = new ExpressionParserConfig();
+	private ExpressionParserConfig config;
 	private LineColumnNumberReader reader;
 	private Tokenizer tokenizer;
 	
@@ -97,9 +75,10 @@ public class ExpressionParser {
 	public ExpressionParser(LineColumnNumberReader reader) {
 		this(new Tokenizer(reader));
 	}
-	
+
 	public ExpressionParser(Tokenizer tokenizer) {
 		this.tokenizer = tokenizer;
+		this.config = tokenizer.getConfig();
 		this.reader = tokenizer.getReader();
 	}
 	
@@ -114,10 +93,6 @@ public class ExpressionParser {
 	
 	public ExpressionParserConfig getConfig() {
 		return config;
-	}
-
-	public void setConfig(ExpressionParserConfig config) {
-		this.config = config;
 	}
 
 	/**

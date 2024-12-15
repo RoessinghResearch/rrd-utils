@@ -28,21 +28,9 @@ import nl.rrd.utils.expressions.Value;
 
 import java.util.*;
 
-public class SubtractExpression implements Expression {
-	private Expression operand1;
-	private Expression operand2;
-	
+public class SubtractExpression extends BinaryExpression {
 	public SubtractExpression(Expression operand1, Expression operand2) {
-		this.operand1 = operand1;
-		this.operand2 = operand2;
-	}
-	
-	public Expression getOperand1() {
-		return operand1;
-	}
-
-	public Expression getOperand2() {
-		return operand2;
+		super(operand1, operand2);
 	}
 
 	@Override
@@ -114,33 +102,6 @@ public class SubtractExpression implements Expression {
 		}
 	}
 
-	@Override
-	public List<Expression> getChildren() {
-		List<Expression> result = new ArrayList<>();
-		result.add(operand1);
-		result.add(operand2);
-		return result;
-	}
-
-	@Override
-	public List<Expression> getDescendants() {
-		List<Expression> result = new ArrayList<>();
-		for (Expression child : getChildren()) {
-			result.add(child);
-			result.addAll(child.getDescendants());
-		}
-		return result;
-	}
-
-	@Override
-	public Set<String> getVariableNames() {
-		Set<String> result = new HashSet<>();
-		for (Expression child : getChildren()) {
-			result.addAll(child.getVariableNames());
-		}
-		return result;
-	}
-	
 	@Override
 	public String toString() {
 		return operand1 + " - " + operand2;

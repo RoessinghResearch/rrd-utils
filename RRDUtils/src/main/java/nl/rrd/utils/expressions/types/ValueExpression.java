@@ -60,6 +60,10 @@ public class ValueExpression implements Expression {
 	}
 
 	@Override
+	public void substituteChild(int index, Expression expr) {
+	}
+
+	@Override
 	public List<Expression> getDescendants() {
 		return new ArrayList<>();
 	}
